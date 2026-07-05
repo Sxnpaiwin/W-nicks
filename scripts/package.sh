@@ -101,7 +101,19 @@ for f in dev/jorel/commandapi/nametag/nms/NMS_1_20_R4*.class \
 done
 echo "  stripped old CommandAPI NMS classes (keep R7, 26_1, Common only)"
 
-# 8. Old PacketEvents version mappings — keep only 1.21+ mappings.
+# 8. Strip the entire gg/lode/ tree — we no longer reference any of
+#    these classes. The old bookshelfapi (Configuration, Task,
+#    MiniMessageHelper, MojangProfile, Metrics, VersionUpdater,
+#    PremiumManager) and bookshelfcmd (FlagArgument) packages are
+#    replaced by our own wnick.util.Config, wnick.util.MiniMsg,
+#    wnick.util.Tasks, wnick.util.Flags, etc. The old nametagapi
+#    package is merged into wnick (NickPlayer + Skin moved directly
+#    into the wnick package; INameTagAPI + NameTagAPI removed entirely).
+#    Saves ~450 KB uncompressed.
+rm -rf gg/lode
+echo "  stripped gg/lode/ (bookshelfapi + bookshelfcmd + nametagapi — replaced by wnick.util.*)"
+
+# 9. Old PacketEvents version mappings — keep only 1.21+ mappings.
 #    Strip V_1_13 through V_1_20_5. Saves ~1 MB uncompressed.
 for v in V_1_13 V_1_13_2 V_1_14 V_1_15 V_1_16 V_1_16_2 V_1_17 \
          V_1_19 V_1_19_3 V_1_19_4 \
@@ -116,8 +128,10 @@ echo "  stripped old PacketEvents block-state mappings (keep 1.21+ only)"
 
 echo "=== Replacing patched classes ==="
 cd "$OUT_DIR"
-for cls in $(find gg/lode/nametag -name "*.class"); do
-   cp "$cls" "$WORK_DIR/$cls"
+for cls in $(find wnick -name "*.class"); do
+   dest="$WORK_DIR/$cls"
+   mkdir -p "$(dirname "$dest")"
+   cp "$cls" "$dest"
 done
 
 # ─────────────────────────────────────────────────────────────────────

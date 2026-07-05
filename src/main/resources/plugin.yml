@@ -1,6 +1,6 @@
 name: W-Nick
 version: "1.0.81-W-Nick"
-main: gg.lode.nametag.NameTagPlugin
+main: wnick.NameTagPlugin
 api-version: '1.21.8'
 authors: [Joehe]
 description: LuckPerms-aware nick plugin with rank spoofing and Paper Dialog API integration.
