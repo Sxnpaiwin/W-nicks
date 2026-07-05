@@ -27,25 +27,33 @@ unzip -q "$ORIG_JAR"
 
 echo "=== Stripping dead weight ==="
 
-# 1. Bundled Adventure API (net/kyori/) — Paper already provides this at
-#    runtime. We compiled against Paper-API's Adventure, so removing the
-#    bundled duplicate is safe. Saves ~1.5 MB uncompressed.
-rm -rf net/kyori
-rm -rf META-INF/maven/net/kyori
-echo "  stripped net/kyori/ (Adventure API — Paper provides at runtime)"
+# 1. Bundled Adventure API (net/kyori/) — KEEP! While Paper provides
+#    Adventure at runtime for the Audience API, the PaperPluginClassLoader
+#    does NOT expose Paper's internal adventure-nbt module to plugins.
+#    PacketEvents' SynchronizedRegistriesHandler needs
+#    net/kyori/adventure/nbt/BinaryTag at class-init time, and stripping
+#    it causes NoClassDefFoundError at onLoad(). The entire net/kyori/
+#    package is only ~1.5 MB uncompressed (~600 KB compressed) — not
+#    worth the risk.
+# (Previously stripped; restored after crash report from user.)
+echo "  kept net/kyori/ (PacketEvents needs adventure-nbt.BinaryTag at class-init)"
 
-# 2. MongoDB driver (com/mongodb + org/bson + org/slf4j) — only needed
-#    if the user picks MONGODB storage. Default is LOCAL. The
-#    StorageManager already handles the missing driver gracefully via
-#    reflection (falls back to LOCAL with a clear error). Users who want
-#    MongoDB can install the driver as a separate server library.
-#    Saves ~5.4 MB uncompressed.
+# 2. MongoDB driver (com/mongodb + org/bson) — only needed if the user
+#    picks MONGODB storage. Default is LOCAL. The StorageManager already
+#    handles the missing driver gracefully via reflection (falls back to
+#    LOCAL with a clear error). Users who want MongoDB can install the
+#    driver as a separate server library. Saves ~5.3 MB uncompressed.
+#
+#    NOTE: We KEEP org/slf4j! CommandAPI (which we use for command
+#    registration) references org/slf4j/Logger in CommandAPILogger and
+#    in every NMS_* class. Stripping slf4j causes NoClassDefFoundError
+#    when CommandAPI tries to log anything. slf4j is only ~50 KB
+#    compressed — not worth the risk.
 rm -rf com/mongodb
 rm -rf org/bson
-rm -rf org/slf4j
 rm -rf META-INF/maven/org.mongodb
-rm -rf META-INF/maven/org.slf4j
-echo "  stripped com/mongodb + org/bson + org/slf4j (MongoDB driver — not needed for LOCAL storage)"
+echo "  stripped com/mongodb + org/bson (MongoDB driver — not needed for LOCAL storage)"
+echo "  kept org/slf4j (CommandAPI needs it for logging)"
 
 # 3. Apache HttpClient (org/apache/hc/) — was used by the removed
 #    CloudNickService (which uploaded data to lode.gg). Since we deleted
