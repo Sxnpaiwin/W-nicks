@@ -1125,15 +1125,39 @@ public final class NameTagPlugin extends JavaPlugin {
          String originalName = nickPlayer.getOriginalName();
          String originalTexture = nickPlayer.getOriginalTexture();
          String originalSignature = nickPlayer.getOriginalSignature();
+
+         // If we don't have the original texture stored, try to fetch it
+         // from Mojang before resetting. This fixes the bug where /nick reset
+         // doesn't restore the original skin.
+         if (originalTexture == null) {
+            this.getLogger().warning("No original texture stored for " + originalName + " — fetching from Mojang...");
+            String[] mojangProfile = MojangSkinFetcher.fetchMojangProfile(player.getUniqueId());
+            if (mojangProfile != null && mojangProfile[1] != null) {
+               originalTexture = mojangProfile[1];
+               originalSignature = mojangProfile[2];
+               nickPlayer.setOriginalTexture(originalTexture);
+               nickPlayer.setOriginalSignature(originalSignature);
+               this.getLogger().info("Fetched original skin from Mojang for " + originalName);
+            } else {
+               this.getLogger().warning("Could not fetch original skin from Mojang for " + originalName);
+            }
+         }
+
          this.getLogger().info("Resetting nick for " + player.getName() + " back to " + originalName);
-         this.paperSkinManager.setProfileName(player, originalName);
+
+         // Set the original skin FIRST, then the name. This order matters:
+         // setProfileName calls forcePlayerUpdate (hide/show) which broadcasts
+         // the profile to other players. If we set the name first, other players
+         // briefly see the nicked skin with the original name. By setting the
+         // skin first, the profile is already correct when the name changes.
          if (originalTexture != null) {
             this.getLogger().info("Restoring original skin...");
             this.paperSkinManager.setSkin(player, originalTexture, originalSignature);
          } else {
-            this.getLogger().warning("No original texture to restore for " + originalName);
+            this.getLogger().warning("No original texture to restore for " + originalName + " — skin will remain as-is");
          }
 
+         this.paperSkinManager.setProfileName(player, originalName);
          this.paperSkinManager.refreshPlayer(player);
          player.playerListName(MiniMsg.deserialize(originalName));
          player.displayName(MiniMsg.deserialize(originalName));

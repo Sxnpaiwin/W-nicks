@@ -123,189 +123,284 @@ public class NickCommand extends CommandAPICommand implements Listener {
             )
       );
       this.withPermission("wnick.commands.nick");
-      this.withArguments(
-         new Argument[]{
-            new EntitySelectorArgument.ManyPlayers("targets")
-               .replaceSuggestions(
-                  ArgumentSuggestions.strings(
-                     s -> s.sender().hasPermission("wnick.commands.nick.others")
-                           ? plugin.getServer().getOnlinePlayers().stream().map(Player::getName).toArray(String[]::new)
-                           : new String[]{s.sender().getName()}
-                  )
-               )
-         }
-      );
-      this.withArguments(
-         new Argument[]{
-            new StringArgument("action")
-               .replaceSuggestions(ArgumentSuggestions.strings(s -> new String[]{"reset", "as", "with_name", "with_skin", "from_url"}))
-         }
-      );
+      // Single greedy argument that captures everything after /nick.
+      // We parse it manually to support both:
+      //   /nick as Smazzy              (self, no target specified)
+      //   /nick NotCladdy as Smazzy    (target another player)
+      //   /nick reset                   (self reset)
+      //   /nick NotCladdy reset         (reset another player)
+      //   /nick with_name Steve -r vip  (self with rank flag)
       this.withOptionalArguments(
          new Argument[]{
-            new GreedyStringArgument("name")
-               .replaceSuggestions(ArgumentSuggestions.strings(s -> plugin.getServer().getOnlinePlayers().stream().map(Player::getName).toArray(String[]::new)))
+            new GreedyStringArgument("input")
+               .replaceSuggestions(ArgumentSuggestions.strings(s -> {
+                  // Suggest action keywords + online player names
+                  java.util.List<String> suggestions = new java.util.ArrayList<>();
+                  suggestions.add("reset");
+                  suggestions.add("as ");
+                  suggestions.add("with_name ");
+                  suggestions.add("with_skin ");
+                  suggestions.add("from_url ");
+                  if (s.sender().hasPermission("wnick.commands.nick.others")) {
+                     for (Player p : plugin.getServer().getOnlinePlayers()) {
+                        suggestions.add(p.getName() + " reset");
+                        suggestions.add(p.getName() + " as ");
+                        suggestions.add(p.getName() + " with_name ");
+                     }
+                  }
+                  return suggestions.toArray(new String[0]);
+               }))
          }
       );
       this.executes(
          (sender, args) -> {
-            List<Player> targets = (List<Player>)args.get("targets");
-            if (targets != null && !targets.isEmpty()) {
-               if (args.get(1) instanceof String action) {
-                  if (action.equalsIgnoreCase("reset")) {
-                     for (Player target : targets) {
-                        if (!sender.hasPermission("wnick.commands.nick.others") && target != sender) {
-                           sender.sendMessage(MiniMsg.deserialize("<red>You do not have permission to nick other players."));
-                           return;
-                        }
+            String input = (String) args.get("input");
 
-                        if (plugin.hasNick(target)) {
-                           plugin.resetNick(target);
-                           sender.sendMessage(
-                              MiniMsg.deserialize(
-                                 "Successfully reset "
-                                    + MiniMsg.serialize(LegacyComponentSerializer.legacyAmpersand().deserialize(target.getName()))
-                                    + "'s nick"
-                              )
-                           );
-                           return;
-                        }
+            // If no input, show help
+            if (input == null || input.trim().isEmpty()) {
+               sendNickHelp(sender);
+               return;
+            }
 
-                        if (targets.size() == 1) {
-                           sender.sendMessage(
-                              MiniMsg.deserialize(
-                                 String.format(
-                                    "<red>%s isn't currently nicked",
-                                    MiniMsg.serialize(LegacyComponentSerializer.legacyAmpersand().deserialize(target.getName()))
-                                 )
-                              )
-                           );
-                           return;
-                        }
-                     }
-                  }
+            // Parse the input: check if the first word is an action keyword or a player name
+            String[] parts = input.trim().split("\\s+", 2);
+            String firstWord = parts[0];
+            String rest = parts.length > 1 ? parts[1] : "";
 
-                  if (args.get(2) instanceof String text) {
-                     for (Player target : targets) {
-                        if (!sender.hasPermission("wnick.commands.nick.others") && target != sender) {
-                           sender.sendMessage(MiniMsg.deserialize("<red>You do not have permission to nick other players."));
-                           return;
-                        }
+            List<Player> targets;
+            String action;
+            String text;
 
-                        String originalName = MiniMsg.serialize(LegacyComponentSerializer.legacyAmpersand().deserialize(target.getName()));
-                        String var9 = action.toLowerCase();
-                        switch (var9) {
-                           case "as":
-                              boolean forcex = Flags.hasFlags(text, "f");
-                              String rankIdx = extractRankFlag(text);
-                              String textNoRankx = stripRankFlag(text);
-                              if (textNoRankx.split(" ").length > 1 && !Flags.hasFlags(textNoRankx, "f")) {
-                                 sender.sendMessage(MiniMsg.deserialize("<red>Your nick cannot contain spaces"));
-                                 return;
-                              }
-
-                              String rawTextx = Flags.sanitizeInput(textNoRankx, Set.of('f'));
-                              String sanitizedTextx = LegacyComponentSerializer.legacySection().serialize(MiniMsg.deserialize(rawTextx));
-                              if (rankIdx != null && plugin.getFakeRankManager() != null && plugin.getFakeRankManager().getRank(rankIdx) == null) {
-                                 sender.sendMessage(MiniMsg.deserialize("<red>Unknown rank: " + rankIdx));
-                                 return;
-                              }
-
-                              Tasks.runAsync(plugin, () -> {
-                                 if (!plugin.config().getBoolean("can_use_existing_players") && !forcex && MojangSkinFetcher.fetchUUID(sanitizedTextx) != null) {
-                                    sender.sendMessage(MiniMsg.deserialize("<red>You cannot nick as an existing Minecraft player!"));
-                                 } else {
-                                    if (plugin.hasNick(target)) {
-                                       plugin.resetNick(target);
-                                    }
-
-                                    Tasks.run(plugin, () -> {
-                                       plugin.setNickFromPlayer(target, sanitizedTextx);
-                                       if (rankIdx != null) {
-                                          NickPlayer nickDatax = plugin.getPlayerCache().get(target.getUniqueId());
-                                          if (nickDatax != null) {
-                                             nickDatax.setFakeRankId(rankIdx);
-                                             plugin.getStorageManager().getStorage().savePlayer(nickDatax);
-                                          }
-                                       }
-                                    });
-                                    sender.sendMessage(MiniMsg.deserialize("Successfully nicked " + originalName + " as " + sanitizedTextx));
-                                 }
-                              });
-                              break;
-                           case "with_name":
-                              boolean force = Flags.hasFlags(text, "f");
-                              String rankId = extractRankFlag(text);
-                              String textNoRank = stripRankFlag(text);
-                              String rawText = Flags.sanitizeInput(textNoRank, Set.of('f'));
-                              String sanitizedText = LegacyComponentSerializer.legacySection()
-                                 .serialize(MiniMsg.deserialize(MiniMsg.convertAmpersandToMiniMessage(rawText)));
-                              if (rawText.split(" ").length > 1 && !force) {
-                                 sender.sendMessage(MiniMsg.deserialize("<red>Your nick name cannot contain spaces"));
-                                 return;
-                              }
-
-                              if (!plugin.config().getBoolean("can_use_existing_players") && !force && MojangSkinFetcher.fetchUUID(sanitizedText) != null) {
-                                 sender.sendMessage(MiniMsg.deserialize("<red>You cannot nick as an existing Minecraft player!"));
-                                 return;
-                              }
-
-                              if (rankId != null && plugin.getFakeRankManager() != null && plugin.getFakeRankManager().getRank(rankId) == null) {
-                                 sender.sendMessage(MiniMsg.deserialize("<red>Unknown rank: " + rankId));
-                                 return;
-                              }
-
-                              plugin.setNickname(target, rawText);
-                              if (rankId != null) {
-                                 NickPlayer nickData = plugin.getPlayerCache().get(target.getUniqueId());
-                                 if (nickData != null) {
-                                    nickData.setFakeRankId(rankId);
-                                    plugin.getStorageManager().getStorage().savePlayer(nickData);
-                                 }
-                              }
-
-                              sender.sendMessage(
-                                 MiniMsg.deserialize("Successfully set " + originalName + "'s name to ")
-                                    .append(MiniMsg.deserialize(MiniMsg.convertAmpersandToMiniMessage(rawText)))
-                              );
-                              break;
-                           case "with_skin":
-                              if (text.split(" ").length > 1) {
-                                 sender.sendMessage(MiniMsg.deserialize("<red>Your nick skin cannot contain spaces"));
-                                 return;
-                              }
-
-                              plugin.setSkinFromPlayer(target, text);
-                              sender.sendMessage(MiniMsg.deserialize("Successfully set " + originalName + "'s skin to " + text));
-                              break;
-                           case "from_url":
-                              if (text.matches("https://(?:minesk\\.in|(?:www\\.)?mineskin\\.org/skins)/[a-f0-9]{32}")) {
-                                 if (!plugin.setSkinFromMineskinUrl(target, text)) {
-                                    sender.sendMessage(MiniMsg.deserialize("<red>Failed to fetch skin from the Mineskin URL"));
-                                    return;
-                                 }
-
-                                 sender.sendMessage(MiniMsg.deserialize("Successfully set " + originalName + "'s skin to the skin from the URL"));
-                              } else {
-                                 if (!plugin.setSkinFromMineskinId(target, text)) {
-                                    sender.sendMessage(MiniMsg.deserialize("<red>Failed to fetch skin. Please supply a valid Mineskin ID or URL."));
-                                    return;
-                                 }
-
-                                 sender.sendMessage(MiniMsg.deserialize("Successfully set " + originalName + "'s skin to the skin from the URL"));
-                              }
-                        }
-                     }
-                  } else {
-                     sender.sendMessage(MiniMsg.deserialize("<red>Invalid arguments. /nick <sender> <reset|as|with_name|with_skin|from_url> <name>"));
+            if (NICK_NAME_ACTIONS.contains(firstWord.toLowerCase()) || firstWord.equalsIgnoreCase("reset")) {
+               // First word is an action → target is self
+               if (!(sender instanceof Player self)) {
+                  sender.sendMessage(MiniMsg.deserialize("<red>You must specify a target when running from console."));
+                  return;
+               }
+               targets = List.of(self);
+               action = firstWord.toLowerCase();
+               text = rest;
+            } else {
+               // First word is a player name → need an action as second word
+               targets = Bukkit.matchPlayer(firstWord);
+               if (targets.isEmpty()) {
+                  sender.sendMessage(MiniMsg.deserialize("<red>Unknown action or player: " + firstWord));
+                  sender.sendMessage(MiniMsg.deserialize("<gray>Usage: /nick [as|with_name|with_skin|from_url|reset] [name]"));
+                  sender.sendMessage(MiniMsg.deserialize("<gray>   or: /nick <player> [as|with_name|with_skin|from_url|reset] [name]"));
+                  return;
+               }
+               // Check permission for targeting others
+               for (Player target : targets) {
+                  if (!sender.hasPermission("wnick.commands.nick.others") && target != sender) {
+                     sender.sendMessage(MiniMsg.deserialize("<red>You do not have permission to nick other players."));
+                     return;
                   }
                }
-            } else {
-               sender.sendMessage(MiniMsg.deserialize("<red>Invalid arguments. /nick [<targets>] <reset|as|with_name|with_skin|from_url> <name>"));
+               // Parse action from rest
+               if (rest.isEmpty()) {
+                  sender.sendMessage(MiniMsg.deserialize("<red>Missing action. Usage: /nick <player> <reset|as|with_name|with_skin|from_url> [name]"));
+                  return;
+               }
+               String[] restParts = rest.split("\\s+", 2);
+               action = restParts[0].toLowerCase();
+               text = restParts.length > 1 ? restParts[1] : "";
+            }
+
+            // Validate action
+            if (!NICK_NAME_ACTIONS.contains(action) && !action.equals("reset")) {
+               sender.sendMessage(MiniMsg.deserialize("<red>Unknown action: " + action));
+               sender.sendMessage(MiniMsg.deserialize("<gray>Valid actions: reset, as, with_name, with_skin, from_url"));
+               return;
+            }
+
+            // --- Handle "reset" action ---
+            if (action.equals("reset")) {
+               for (Player target : targets) {
+                  if (plugin.hasNick(target)) {
+                     plugin.resetNick(target);
+                     sender.sendMessage(MiniMsg.deserialize(
+                        target == sender
+                           ? "Successfully reset your nick"
+                           : "Successfully reset " + target.getName() + "'s nick"
+                     ));
+                  } else {
+                     sender.sendMessage(MiniMsg.deserialize(
+                        target == sender
+                           ? "<red>You aren't currently nicked"
+                           : "<red>" + target.getName() + " isn't currently nicked"
+                     ));
+                  }
+               }
+               return;
+            }
+
+            // --- Handle actions that need a name argument ---
+            if (text.isEmpty()) {
+               sender.sendMessage(MiniMsg.deserialize("<red>Missing name. Usage: /nick " + action + " <name>"));
+               return;
+            }
+
+            for (Player target : targets) {
+               String originalName = target.getName();
+               switch (action) {
+                  case "as" -> handleAs(sender, target, originalName, text);
+                  case "with_name" -> handleWithName(sender, target, originalName, text);
+                  case "with_skin" -> handleWithSkin(sender, target, originalName, text);
+                  case "from_url" -> handleFromUrl(sender, target, originalName, text);
+               }
             }
          },
          new ExecutorType[0]
       );
+   }
+
+   /**
+    * /nick as <name> — nick as an existing Minecraft player (copies skin + name).
+    * Preserves the existing fake rank if no -r flag is passed.
+    */
+   private void handleAs(org.bukkit.command.CommandSender sender, Player target, String originalName, String text) {
+      boolean force = Flags.hasFlags(text, "f");
+      String rankId = extractRankFlag(text);
+      String textNoRank = stripRankFlag(text);
+      if (textNoRank.split(" ").length > 1 && !force) {
+         sender.sendMessage(MiniMsg.deserialize("<red>Your nick cannot contain spaces"));
+         return;
+      }
+
+      String rawText = Flags.sanitizeInput(textNoRank, Set.of('f'));
+      String sanitizedText = LegacyComponentSerializer.legacySection().serialize(MiniMsg.deserialize(rawText));
+
+      if (rankId != null && plugin.getFakeRankManager() != null && plugin.getFakeRankManager().getRank(rankId) == null) {
+         sender.sendMessage(MiniMsg.deserialize("<red>Unknown rank: " + rankId));
+         return;
+      }
+
+      // Save the current fake rank so we can restore it after the reset.
+      NickPlayer existingData = plugin.getPlayerCache().get(target.getUniqueId());
+      String preservedRankId = (rankId != null) ? rankId
+         : (existingData != null ? existingData.getFakeRankId() : null);
+
+      Tasks.runAsync(plugin, () -> {
+         if (!plugin.config().getBoolean("can_use_existing_players") && !force && MojangSkinFetcher.fetchUUID(sanitizedText) != null) {
+            sender.sendMessage(MiniMsg.deserialize("<red>You cannot nick as an existing Minecraft player!"));
+         } else {
+            if (plugin.hasNick(target)) {
+               plugin.resetNick(target);
+            }
+
+            Tasks.run(plugin, () -> {
+               plugin.setNickFromPlayer(target, sanitizedText);
+               // Restore or set the fake rank
+               if (preservedRankId != null) {
+                  NickPlayer nickData = plugin.getPlayerCache().get(target.getUniqueId());
+                  if (nickData != null) {
+                     nickData.setFakeRankId(preservedRankId);
+                     plugin.getStorageManager().getStorage().savePlayer(nickData);
+                     // Refresh TAB display so the rank prefix/suffix shows
+                     if (plugin.getServer().getPluginManager().isPluginEnabled("TAB")) {
+                        plugin.attemptToUpdateTabPlayer(target);
+                     }
+                  }
+               }
+            });
+            String rankMsg = preservedRankId != null ? " <gray>(rank: " + preservedRankId + ")" : "";
+            sender.sendMessage(MiniMsg.deserialize("Successfully nicked " + originalName + " as " + sanitizedText + rankMsg));
+         }
+      });
+   }
+
+   /**
+    * /nick with_name <name> — set a custom nickname (no skin change).
+    * Preserves the existing fake rank if no -r flag is passed.
+    */
+   private void handleWithName(org.bukkit.command.CommandSender sender, Player target, String originalName, String text) {
+      boolean force = Flags.hasFlags(text, "f");
+      String rankId = extractRankFlag(text);
+      String textNoRank = stripRankFlag(text);
+      String rawText = Flags.sanitizeInput(textNoRank, Set.of('f'));
+      String sanitizedText = LegacyComponentSerializer.legacySection()
+         .serialize(MiniMsg.deserialize(MiniMsg.convertAmpersandToMiniMessage(rawText)));
+
+      if (rawText.split(" ").length > 1 && !force) {
+         sender.sendMessage(MiniMsg.deserialize("<red>Your nick name cannot contain spaces"));
+         return;
+      }
+
+      if (!plugin.config().getBoolean("can_use_existing_players") && !force && MojangSkinFetcher.fetchUUID(sanitizedText) != null) {
+         sender.sendMessage(MiniMsg.deserialize("<red>You cannot nick as an existing Minecraft player!"));
+         return;
+      }
+
+      if (rankId != null && plugin.getFakeRankManager() != null && plugin.getFakeRankManager().getRank(rankId) == null) {
+         sender.sendMessage(MiniMsg.deserialize("<red>Unknown rank: " + rankId));
+         return;
+      }
+
+      // Preserve existing rank if no -r flag
+      NickPlayer existingData = plugin.getPlayerCache().get(target.getUniqueId());
+      String effectiveRankId = (rankId != null) ? rankId
+         : (existingData != null ? existingData.getFakeRankId() : null);
+
+      plugin.setNickname(target, rawText);
+      if (effectiveRankId != null) {
+         NickPlayer nickData = plugin.getPlayerCache().get(target.getUniqueId());
+         if (nickData != null) {
+            nickData.setFakeRankId(effectiveRankId);
+            plugin.getStorageManager().getStorage().savePlayer(nickData);
+            if (plugin.getServer().getPluginManager().isPluginEnabled("TAB")) {
+               plugin.attemptToUpdateTabPlayer(target);
+            }
+         }
+      }
+
+      sender.sendMessage(
+         MiniMsg.deserialize("Successfully set " + originalName + "'s name to ")
+            .append(MiniMsg.deserialize(MiniMsg.convertAmpersandToMiniMessage(rawText)))
+      );
+   }
+
+   /**
+    * /nick with_skin <player> — copy another player's skin.
+    */
+   private void handleWithSkin(org.bukkit.command.CommandSender sender, Player target, String originalName, String text) {
+      if (text.split(" ").length > 1) {
+         sender.sendMessage(MiniMsg.deserialize("<red>Your nick skin cannot contain spaces"));
+         return;
+      }
+
+      plugin.setSkinFromPlayer(target, text);
+      sender.sendMessage(MiniMsg.deserialize("Successfully set " + originalName + "'s skin to " + text));
+   }
+
+   /**
+    * /nick from_url <url> — apply a Mineskin skin from a URL or ID.
+    */
+   private void handleFromUrl(org.bukkit.command.CommandSender sender, Player target, String originalName, String text) {
+      if (text.matches("https://(?:minesk\\.in|(?:www\\.)?mineskin\\.org/skins)/[a-f0-9]{32}")) {
+         if (!plugin.setSkinFromMineskinUrl(target, text)) {
+            sender.sendMessage(MiniMsg.deserialize("<red>Failed to fetch skin from the Mineskin URL"));
+            return;
+         }
+         sender.sendMessage(MiniMsg.deserialize("Successfully set " + originalName + "'s skin to the skin from the URL"));
+      } else {
+         if (!plugin.setSkinFromMineskinId(target, text)) {
+            sender.sendMessage(MiniMsg.deserialize("<red>Failed to fetch skin. Please supply a valid Mineskin ID or URL."));
+            return;
+         }
+         sender.sendMessage(MiniMsg.deserialize("Successfully set " + originalName + "'s skin to the skin from the URL"));
+      }
+   }
+
+   /** Show help for /nick */
+   private static void sendNickHelp(org.bukkit.command.CommandSender sender) {
+      sender.sendMessage(MiniMsg.deserialize("<gold><bold>/nick</bold> <gray>commands:"));
+      sender.sendMessage(MiniMsg.deserialize("<yellow>/nick as <name> [-r <rank>] <gray>— nick as another player (copies skin + name)"));
+      sender.sendMessage(MiniMsg.deserialize("<yellow>/nick with_name <name> [-r <rank>] <gray>— set a custom name (keeps your skin)"));
+      sender.sendMessage(MiniMsg.deserialize("<yellow>/nick with_skin <player> <gray>— copy another player's skin"));
+      sender.sendMessage(MiniMsg.deserialize("<yellow>/nick from_url <url|id> <gray>— apply a Mineskin skin"));
+      sender.sendMessage(MiniMsg.deserialize("<yellow>/nick reset <gray>— restore your original name and skin"));
+      sender.sendMessage(MiniMsg.deserialize("<dark_gray>─</dark_gray> <gray>For other players: /nick <player> <action> [name]"));
+      sender.sendMessage(MiniMsg.deserialize("<dark_gray>─</dark_gray> <gray>Rank flag: -r <rank> (e.g. -r vip)"));
    }
 
    @EventHandler(
