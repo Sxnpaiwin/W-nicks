@@ -21,6 +21,7 @@ import gg.lode.nametag.storage.StorageManager;
 import gg.lode.nametag.util.FakeRankManager;
 import gg.lode.nametag.util.MojangSkinFetcher;
 import gg.lode.nametag.util.SkinProvider;
+import gg.lode.nametag.util.TabIntegration;
 import gg.lode.nametag.util.UsernameGenerator;
 import gg.lode.nametagapi.INameTagAPI;
 import gg.lode.nametagapi.NameTagAPI;
@@ -39,9 +40,6 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import me.neznamy.tab.api.TabAPI;
-import me.neznamy.tab.api.TabPlayer;
-import me.neznamy.tab.api.event.player.PlayerLoadEvent;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
@@ -60,6 +58,8 @@ public final class NameTagPlugin extends JavaPlugin implements INameTagAPI {
    private PaperSkinManager paperSkinManager;
    @Nullable
    private FakeRankManager fakeRankManager;
+   @Nullable
+   private TabIntegration tabIntegration;
    private Configuration config;
    private static final int CONFIG_VERSION = 6;
    private static NameTagPlugin instance;
@@ -249,18 +249,15 @@ public final class NameTagPlugin extends JavaPlugin implements INameTagAPI {
       this.getLogger().info("W-Nick UserHandler initialized for " + this.getServer().getOnlinePlayers().size() + " online players");
       // [W-Nick] VersionUpdater removed — no phone-home to third-party servers.
       this.registerCommands();
+      // [W-Nick] TAB integration via pure reflection so we survive any TAB
+      // API version mismatch (notably EventBus.register changed signature
+      // between (Class, Consumer) and (Class, EventHandler) across versions).
       if (this.getServer().getPluginManager().isPluginEnabled("TAB")) {
-         try {
-            Class<?> tabClass = Class.forName("me.neznamy.tab.api.TabAPI");
-            Method getInstanceMethod = tabClass.getMethod("getInstance");
-            TabAPI tabApiInstance = (TabAPI)getInstanceMethod.invoke(null);
-            Objects.requireNonNull(tabApiInstance.getEventBus()).register(PlayerLoadEvent.class, event -> this.updateTabPlayer(event.getPlayer()));
-            this.getLogger().warning("==========================================");
-            this.getLogger().warning("Hooked into TAB!");
-            this.getLogger().warning("W-Nick will now use TAB to display nicknames.");
-            this.getLogger().warning("==========================================");
-         } catch (Exception var4) {
-            var4.printStackTrace();
+         this.tabIntegration = new TabIntegration(this);
+         if (this.tabIntegration.hook()) {
+            this.tabIntegration.registerPlayerLoadListener();
+         } else {
+            this.tabIntegration = null;
          }
       }
 
@@ -297,39 +294,14 @@ public final class NameTagPlugin extends JavaPlugin implements INameTagAPI {
       return this.paperSkinManager;
    }
 
-   public void updateTabPlayer(TabPlayer player) {
-      boolean nicked = this.hasNick(player.getUniqueId());
-      String name = nicked ? this.getNick(player.getUniqueId()) : player.getName();
-      String fakePrefix = null;
-      String fakeSuffix = null;
-      if (nicked && this.fakeRankManager != null) {
-         NickPlayer nickData = this.playerCache.get(player.getUniqueId());
-         if (nickData != null && nickData.getFakeRankId() != null) {
-            FakeRankManager.FakeRank rank = this.fakeRankManager.getRank(nickData.getFakeRankId());
-            if (rank != null) {
-               fakePrefix = rank.prefix().isEmpty() ? null : rank.prefix();
-               fakeSuffix = rank.suffix().isEmpty() ? null : rank.suffix();
-            }
-         }
-      }
-
-      try {
-         TabAPI tabApiInstance = TabAPI.getInstance();
-         if (tabApiInstance.getTabListFormatManager() != null) {
-            tabApiInstance.getTabListFormatManager().setName(player, name);
-            tabApiInstance.getTabListFormatManager().setPrefix(player, fakePrefix);
-            tabApiInstance.getTabListFormatManager().setSuffix(player, fakeSuffix);
-         }
-
-         if (tabApiInstance.getNameTagManager() != null) {
-            tabApiInstance.getNameTagManager().setPrefix(player, fakePrefix);
-            tabApiInstance.getNameTagManager().setSuffix(player, fakeSuffix);
-         }
-
-         this.getLogger().info("[TAB] Updated " + player.getName() + " to " + name);
-      } catch (Exception var8) {
-         this.getLogger().warning("Failed to update player " + player.getName() + " in TAB: " + var8.getMessage());
-      }
+   /**
+    * @deprecated Use {@link #attemptToUpdateTabPlayer(Player)} instead. The
+    * old method took a TAB {@code TabPlayer} directly, but W-Nick now talks
+    * to TAB via reflection, so there is no compile-time {@code TabPlayer} type.
+    */
+   @Deprecated(since = "1.0.81-W-Nick", forRemoval = true)
+   public void updateTabPlayer(Object ignoredTabPlayer) {
+      // no-op — the reflection-based TabIntegration.refreshPlayer() handles this now.
    }
 
    public StorageManager getStorageManager() {
@@ -665,18 +637,10 @@ public final class NameTagPlugin extends JavaPlugin implements INameTagAPI {
    }
 
    public void attemptToUpdateTabPlayer(Player player) {
-      try {
-         Class<?> tabClass = Class.forName("me.neznamy.tab.api.TabAPI");
-         Method getInstanceMethod = tabClass.getMethod("getInstance");
-         TabAPI tabApiInstance = (TabAPI)getInstanceMethod.invoke(null);
-         TabPlayer tabPlayer = tabApiInstance.getPlayer(player.getUniqueId());
-         if (tabPlayer == null) {
-            throw new Exception("fucking tab player cant be found");
-         }
-
-         this.updateTabPlayer(tabPlayer);
-      } catch (Exception var6) {
-         var6.printStackTrace();
+      // [W-Nick] All TAB interaction is now done via reflection in TabIntegration,
+      // so we don't crash on TAB API version mismatches (NoSuchMethodError etc).
+      if (this.tabIntegration != null) {
+         this.tabIntegration.refreshPlayer(player);
       }
    }
 
