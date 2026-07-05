@@ -33,25 +33,25 @@ import org.bukkit.entity.Player;
  *
  * Requires the LuckPerms plugin to be installed and the plugin to have hooked into it.
  * Permissions:
- *   lodestone.nametag.commands.nickrank           - access to /nickrank
- *   lodestone.nametag.commands.nickrank.list      - list ranks
- *   lodestone.nametag.commands.nickrank.set       - set a rank
- *   lodestone.nametag.commands.nickrank.clear     - clear a rank
- *   lodestone.nametag.commands.nickrank.random    - random rank
- *   lodestone.nametag.commands.nickrank.current   - view current rank
- *   lodestone.nametag.commands.nickrank.others    - act on other players
+ *   wnick.commands.nickrank           - access to /nickrank
+ *   wnick.commands.nickrank.list      - list ranks
+ *   wnick.commands.nickrank.set       - set a rank
+ *   wnick.commands.nickrank.clear     - clear a rank
+ *   wnick.commands.nickrank.random    - random rank
+ *   wnick.commands.nickrank.current   - view current rank
+ *   wnick.commands.nickrank.others    - act on other players
  */
 public class NickRankCommand extends CommandAPICommand {
 
    public NickRankCommand(NameTagPlugin plugin) {
       super("nickrank");
-      this.withPermission("lodestone.nametag.commands.nickrank");
+      this.withPermission("wnick.commands.nickrank");
       this.withAliases("nr", "fakerank");
 
       // /nickrank list [all|assignable]
       this.withSubcommand(
          new CommandAPICommand("list")
-            .withPermission("lodestone.nametag.commands.nickrank.list")
+            .withPermission("wnick.commands.nickrank.list")
             .withOptionalArguments(
                new Argument[]{
                   new StringArgument("filter")
@@ -77,7 +77,7 @@ public class NickRankCommand extends CommandAPICommand {
                   sender.sendMessage(
                      MiniMessageHelper.deserialize(
                         "<yellow>No " + (onlyAssignable ? "assignable" : "") + " ranks found."
-                           + (onlyAssignable ? " Tag a LuckPerms group with the permission <gray>lodestone.nametag.randomly_assignable</gray> to make it assignable." : "")
+                           + (onlyAssignable ? " Tag a LuckPerms group with the permission <gray>wnick.rank.assignable</gray> to make it assignable." : "")
                      )
                   );
                   return;
@@ -114,7 +114,7 @@ public class NickRankCommand extends CommandAPICommand {
       // /nickrank set <rank> [targets]
       this.withSubcommand(
          new CommandAPICommand("set")
-            .withPermission("lodestone.nametag.commands.nickrank.set")
+            .withPermission("wnick.commands.nickrank.set")
             .withArguments(
                new Argument[]{
                   new StringArgument("rank").replaceSuggestions(
@@ -136,7 +136,7 @@ public class NickRankCommand extends CommandAPICommand {
             .withOptionalArguments(
                new Argument[]{
                   new EntitySelectorArgument.ManyPlayers("targets")
-                     .withPermission("lodestone.nametag.commands.nickrank.others")
+                     .withPermission("wnick.commands.nickrank.others")
                }
             )
             .executes((sender, args) -> {
@@ -168,7 +168,7 @@ public class NickRankCommand extends CommandAPICommand {
                }
 
                for (Player target : targets) {
-                  if (!sender.hasPermission("lodestone.nametag.commands.nickrank.others") && target != sender) {
+                  if (!sender.hasPermission("wnick.commands.nickrank.others") && target != sender) {
                      sender.sendMessage(MiniMessageHelper.deserialize("<red>You do not have permission to change other players' fake rank."));
                      return;
                   }
@@ -196,11 +196,11 @@ public class NickRankCommand extends CommandAPICommand {
       // /nickrank clear [targets]
       this.withSubcommand(
          new CommandAPICommand("clear")
-            .withPermission("lodestone.nametag.commands.nickrank.clear")
+            .withPermission("wnick.commands.nickrank.clear")
             .withOptionalArguments(
                new Argument[]{
                   new EntitySelectorArgument.ManyPlayers("targets")
-                     .withPermission("lodestone.nametag.commands.nickrank.others")
+                     .withPermission("wnick.commands.nickrank.others")
                }
             )
             .executes((sender, args) -> {
@@ -214,7 +214,7 @@ public class NickRankCommand extends CommandAPICommand {
                   targets = List.of(self);
                }
                for (Player target : targets) {
-                  if (!sender.hasPermission("lodestone.nametag.commands.nickrank.others") && target != sender) {
+                  if (!sender.hasPermission("wnick.commands.nickrank.others") && target != sender) {
                      sender.sendMessage(MiniMessageHelper.deserialize("<red>You do not have permission to clear other players' fake rank."));
                      return;
                   }
@@ -230,11 +230,11 @@ public class NickRankCommand extends CommandAPICommand {
       // /nickrank random [targets]
       this.withSubcommand(
          new CommandAPICommand("random")
-            .withPermission("lodestone.nametag.commands.nickrank.random")
+            .withPermission("wnick.commands.nickrank.random")
             .withOptionalArguments(
                new Argument[]{
                   new EntitySelectorArgument.ManyPlayers("targets")
-                     .withPermission("lodestone.nametag.commands.nickrank.others")
+                     .withPermission("wnick.commands.nickrank.others")
                }
             )
             .executes((sender, args) -> {
@@ -244,7 +244,7 @@ public class NickRankCommand extends CommandAPICommand {
                }
                FakeRankManager.FakeRank random = plugin.getFakeRankManager().getRandomRank();
                if (random == null) {
-                  sender.sendMessage(MiniMessageHelper.deserialize("<red>No assignable ranks found. Tag a LuckPerms group with the permission <gray>lodestone.nametag.randomly_assignable</gray> to make it assignable."));
+                  sender.sendMessage(MiniMessageHelper.deserialize("<red>No assignable ranks found. Tag a LuckPerms group with the permission <gray>wnick.rank.assignable</gray> to make it assignable."));
                   return;
                }
                @SuppressWarnings("unchecked")
@@ -257,7 +257,7 @@ public class NickRankCommand extends CommandAPICommand {
                   targets = List.of(self);
                }
                for (Player target : targets) {
-                  if (!sender.hasPermission("lodestone.nametag.commands.nickrank.others") && target != sender) {
+                  if (!sender.hasPermission("wnick.commands.nickrank.others") && target != sender) {
                      sender.sendMessage(MiniMessageHelper.deserialize("<red>You do not have permission to change other players' fake rank."));
                      return;
                   }
@@ -275,17 +275,17 @@ public class NickRankCommand extends CommandAPICommand {
       // /nickrank current [target]
       this.withSubcommand(
          new CommandAPICommand("current")
-            .withPermission("lodestone.nametag.commands.nickrank.current")
+            .withPermission("wnick.commands.nickrank.current")
             .withOptionalArguments(
                new Argument[]{
                   new EntitySelectorArgument.OnePlayer("target")
-                     .withPermission("lodestone.nametag.commands.nickrank.others")
+                     .withPermission("wnick.commands.nickrank.others")
                }
             )
             .executes((sender, args) -> {
                Player target;
                if (args.get("target") instanceof Player p) {
-                  if (!sender.hasPermission("lodestone.nametag.commands.nickrank.others") && p != sender) {
+                  if (!sender.hasPermission("wnick.commands.nickrank.others") && p != sender) {
                      sender.sendMessage(MiniMessageHelper.deserialize("<red>You do not have permission to view other players' fake rank."));
                      return;
                   }

@@ -23,9 +23,8 @@ SOFTWARE.
 ---
 
 Note: The W-Nick patches, new commands, and integration code in this
-repository are MIT-licensed. The upstream Name-Tag plugin and the bundled
-third-party libraries (PacketEvents, CommandAPI, BookshelfAPI, MongoDB
-driver, bStats, adventure, etc.) retain their original licenses and are
-NOT redistributed as source code in this repository. The compiled JAR in
-the releases section includes those binaries under their respective
-licenses for end-user convenience.
+repository are MIT-licensed. The bundled third-party libraries
+(PacketEvents, CommandAPI, BookshelfAPI, MongoDB driver, adventure, etc.)
+retain their original licenses and are NOT redistributed as source code in
+this repository. The compiled JAR in the releases section includes those
+binaries under their respective licenses for end-user convenience.

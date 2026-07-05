@@ -51,31 +51,31 @@ public class NickCommand extends CommandAPICommand implements Listener {
       super("nick");
       this.plugin = plugin;
       plugin.getServer().getPluginManager().registerEvents(this, plugin);
-      this.withSubcommand(new CommandAPICommand("reset_all").withPermission("lodestone.nametag.commands.nick.reset_all").executes((sender, args) -> {
+      this.withSubcommand(new CommandAPICommand("reset_all").withPermission("wnick.commands.nick.reset_all").executes((sender, args) -> {
          sender.sendMessage(MiniMessageHelper.deserialize("<yellow>Starting complete reset of all nickname data..."));
          plugin.resetAllNicks();
          sender.sendMessage(MiniMessageHelper.deserialize("Reset command executed. Check console for details."));
       }, new ExecutorType[0]));
-      this.withSubcommand(new CommandAPICommand("save_all").withPermission("lodestone.nametag.commands.nick.save_all").executes((sender, args) -> {
+      this.withSubcommand(new CommandAPICommand("save_all").withPermission("wnick.commands.nick.save_all").executes((sender, args) -> {
          sender.sendMessage(MiniMessageHelper.deserialize("<yellow>Starting sequential save of all online players' data..."));
          plugin.saveAllPlayersData();
          sender.sendMessage(MiniMessageHelper.deserialize("Save command executed. Check console for details."));
       }, new ExecutorType[0]));
-      this.withSubcommand(new CommandAPICommand("save_cached").withPermission("lodestone.nametag.commands.nick.save_cached").executes((sender, args) -> {
+      this.withSubcommand(new CommandAPICommand("save_cached").withPermission("wnick.commands.nick.save_cached").executes((sender, args) -> {
          sender.sendMessage(MiniMessageHelper.deserialize("<yellow>Starting sequential save of all cached players' data..."));
          plugin.saveAllCachedPlayersData();
          sender.sendMessage(MiniMessageHelper.deserialize("Save command executed. Check console for details."));
       }, new ExecutorType[0]));
       this.withSubcommand(
          new CommandAPICommand("reset")
-            .withPermission("lodestone.nametag.commands.nick.reset")
-            .withOptionalArguments(new Argument[]{new EntitySelectorArgument.ManyPlayers("targets").withPermission("lodestone.nametag.commands.nick.others")})
+            .withPermission("wnick.commands.nick.reset")
+            .withOptionalArguments(new Argument[]{new EntitySelectorArgument.ManyPlayers("targets").withPermission("wnick.commands.nick.others")})
             .executes(
                (sender, args) -> {
                   List<Player> targets = (List<Player>)args.get("targets");
                   if (targets != null && !targets.isEmpty()) {
                      for (Player target : targets) {
-                        if (!sender.hasPermission("lodestone.nametag.commands.nick.others") && target != sender) {
+                        if (!sender.hasPermission("wnick.commands.nick.others") && target != sender) {
                            sender.sendMessage(MiniMessageHelper.deserialize("<red>You do not have permission to nick other players."));
                            return;
                         }
@@ -122,13 +122,13 @@ public class NickCommand extends CommandAPICommand implements Listener {
                new ExecutorType[0]
             )
       );
-      this.withPermission("lodestone.nametag.commands.nick");
+      this.withPermission("wnick.commands.nick");
       this.withArguments(
          new Argument[]{
             new EntitySelectorArgument.ManyPlayers("targets")
                .replaceSuggestions(
                   ArgumentSuggestions.strings(
-                     s -> s.sender().hasPermission("lodestone.nametag.commands.nick.others")
+                     s -> s.sender().hasPermission("wnick.commands.nick.others")
                            ? plugin.getServer().getOnlinePlayers().stream().map(Player::getName).toArray(String[]::new)
                            : new String[]{s.sender().getName()}
                   )
@@ -154,7 +154,7 @@ public class NickCommand extends CommandAPICommand implements Listener {
                if (args.get(1) instanceof String action) {
                   if (action.equalsIgnoreCase("reset")) {
                      for (Player target : targets) {
-                        if (!sender.hasPermission("lodestone.nametag.commands.nick.others") && target != sender) {
+                        if (!sender.hasPermission("wnick.commands.nick.others") && target != sender) {
                            sender.sendMessage(MiniMessageHelper.deserialize("<red>You do not have permission to nick other players."));
                            return;
                         }
@@ -187,7 +187,7 @@ public class NickCommand extends CommandAPICommand implements Listener {
 
                   if (args.get(2) instanceof String text) {
                      for (Player target : targets) {
-                        if (!sender.hasPermission("lodestone.nametag.commands.nick.others") && target != sender) {
+                        if (!sender.hasPermission("wnick.commands.nick.others") && target != sender) {
                            sender.sendMessage(MiniMessageHelper.deserialize("<red>You do not have permission to nick other players."));
                            return;
                         }
@@ -343,15 +343,8 @@ public class NickCommand extends CommandAPICommand implements Listener {
    )
    public void on(PlayerJoinEvent event) {
       Player player = event.getPlayer();
-      if (this.plugin.config().getBoolean("allow_cloud_nicking")) {
-         this.plugin.getServer().getScheduler().runTaskAsynchronously(this.plugin, () -> {
-            try {
-               this.plugin.getCloudNickService().registerPlayer(player.getUniqueId(), player.getName());
-            } catch (Exception var3x) {
-               this.plugin.getLogger().warning("[Cloud Nick] Failed to register player on join: " + var3x.getMessage());
-            }
-         });
-      }
+      // [W-Nick] Cloud-nick phone-home call removed — player UUIDs and usernames
+      // are no longer uploaded to any third-party service on join.
 
       Component originalJoinMessage = event.joinMessage();
       event.joinMessage(null);

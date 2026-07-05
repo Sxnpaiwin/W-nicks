@@ -65,7 +65,6 @@ public class SkinProvider {
       "Antonisu",
       "AntToesKnees",
       "Aopks",
-      "Apollo30",
       "AppleW",
       "aprilmaple5620",
       "Aprite",

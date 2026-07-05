@@ -9,9 +9,7 @@ import dev.jorel.commandapi.nametag.CommandAPI;
 import dev.jorel.commandapi.nametag.CommandAPIPaperConfig;
 import gg.lode.bookshelfapi.api.Configuration;
 import gg.lode.bookshelfapi.api.Task;
-import gg.lode.bookshelfapi.api.VersionUpdater;
 import gg.lode.bookshelfapi.api.mojang.MojangProfile;
-import gg.lode.bookshelfapi.api.util.Metrics;
 import gg.lode.bookshelfapi.api.util.MiniMessageHelper;
 import gg.lode.nametag.command.NameTagCommand;
 import gg.lode.nametag.command.NickCommand;
@@ -20,7 +18,6 @@ import gg.lode.nametag.command.RealNameCommand;
 import gg.lode.nametag.listeners.PlayerInfoPacketListener;
 import gg.lode.nametag.nms.PaperSkinManager;
 import gg.lode.nametag.storage.StorageManager;
-import gg.lode.nametag.util.CloudNickService;
 import gg.lode.nametag.util.FakeRankManager;
 import gg.lode.nametag.util.MojangSkinFetcher;
 import gg.lode.nametag.util.SkinProvider;
@@ -61,7 +58,6 @@ public final class NameTagPlugin extends JavaPlugin implements INameTagAPI {
    private final ConcurrentHashMap<UUID, NickPlayer> playerCache = new ConcurrentHashMap<>();
    private StorageManager storageManager;
    private PaperSkinManager paperSkinManager;
-   private CloudNickService cloudNickService;
    @Nullable
    private FakeRankManager fakeRankManager;
    private Configuration config;
@@ -130,7 +126,7 @@ public final class NameTagPlugin extends JavaPlugin implements INameTagAPI {
    }
 
    public void onLoad() {
-      new Metrics(this, 24781);
+      // [W-Nick] bStats metrics removed for privacy. No telemetry is sent.
       PacketEvents.setAPI(
          SpigotPacketEventsBuilder.build(
             this, new PacketEventsSettings().checkForUpdates(false).fullStackTrace(true).kickIfTerminated(false).kickOnPacketException(false)
@@ -171,7 +167,8 @@ public final class NameTagPlugin extends JavaPlugin implements INameTagAPI {
             case 4:
                this.config.set("can_use_existing_players", true);
                this.config.set("should_spoof_uuid", false);
-               this.config.set("allow_cloud_nicking", true);
+               // [W-Nick] allow_cloud_nicking removed — no phone-home. Drop the key.
+               this.config.set("allow_cloud_nicking", null);
                // fall through
             case 5:
                // [W-Nick] new keys added by this fork.
@@ -184,12 +181,15 @@ public final class NameTagPlugin extends JavaPlugin implements INameTagAPI {
                if (this.config.getString("auto_assign_random_rank_on_random_nick", null) == null) {
                   this.config.set("auto_assign_random_rank_on_random_nick", true);
                }
+               // [W-Nick] Drop the now-unused allow_cloud_nicking key if it exists.
+               this.config.set("allow_cloud_nicking", null);
                break;
             default:
                // Unknown version — initialize all W-Nick keys defensively.
                this.config.set("message_prefix", "<gold>[W-Nick]</gold> ");
                this.config.set("auto_apply_nick_on_join", true);
                this.config.set("auto_assign_random_rank_on_random_nick", true);
+               this.config.set("allow_cloud_nicking", null);
          }
 
          this.config.set("version", current + 1);
@@ -208,7 +208,8 @@ public final class NameTagPlugin extends JavaPlugin implements INameTagAPI {
       CommandAPI.onEnable();
       instance = this;
       this.paperSkinManager = new PaperSkinManager();
-      this.cloudNickService = new CloudNickService(this.getLogger(), this.getServer().getPort());
+      // [W-Nick] CloudNickService removed — no phone-home, no IP leak.
+      // Random /nick generation now uses the local UsernameGenerator exclusively.
 
       // [W-Nick] Auto-apply saved nick on join
       this.getServer().getPluginManager().registerEvents(
@@ -245,10 +246,8 @@ public final class NameTagPlugin extends JavaPlugin implements INameTagAPI {
                }));
       }
 
-      this.getLogger().info("NickAPI UserHandler initialized for " + this.getServer().getOnlinePlayers().size() + " online players");
-      this.getServer()
-         .getPluginManager()
-         .registerEvents(new VersionUpdater(this, "W-Nick", "https://lode.gg/plugin/nametag", "https://lode.gg/api/plugins/nametag/version", VERSION), this);
+      this.getLogger().info("W-Nick UserHandler initialized for " + this.getServer().getOnlinePlayers().size() + " online players");
+      // [W-Nick] VersionUpdater removed — no phone-home to third-party servers.
       this.registerCommands();
       if (this.getServer().getPluginManager().isPluginEnabled("TAB")) {
          try {
@@ -258,7 +257,7 @@ public final class NameTagPlugin extends JavaPlugin implements INameTagAPI {
             Objects.requireNonNull(tabApiInstance.getEventBus()).register(PlayerLoadEvent.class, event -> this.updateTabPlayer(event.getPlayer()));
             this.getLogger().warning("==========================================");
             this.getLogger().warning("Hooked into TAB!");
-            this.getLogger().warning("Name Tag will now use TAB to display nicknames.");
+            this.getLogger().warning("W-Nick will now use TAB to display nicknames.");
             this.getLogger().warning("==========================================");
          } catch (Exception var4) {
             var4.printStackTrace();
@@ -281,10 +280,6 @@ public final class NameTagPlugin extends JavaPlugin implements INameTagAPI {
 
    public PaperSkinManager getPaperSkinManager() {
       return this.paperSkinManager;
-   }
-
-   public CloudNickService getCloudNickService() {
-      return this.cloudNickService;
    }
 
    public void updateTabPlayer(TabPlayer player) {
@@ -770,21 +765,8 @@ public final class NameTagPlugin extends JavaPlugin implements INameTagAPI {
    @Override
    public void randomNick(Player player) {
       this.getServer().getScheduler().runTaskAsynchronously(this, () -> {
-         String generatedUsername = null;
-         if (this.config().getBoolean("allow_cloud_nicking")) {
-            try {
-               generatedUsername = this.cloudNickService.getRandomNick();
-               if (generatedUsername != null) {
-                  this.getLogger().info("[Cloud Nick] Received nick from cloud: " + generatedUsername);
-               }
-            } catch (Exception var5) {
-               this.getLogger().warning("[Cloud Nick] Cloud service unavailable, falling back to legacy: " + var5.getMessage());
-            }
-         }
-
-         if (generatedUsername == null) {
-            generatedUsername = this.findAvailableUsername();
-         }
+         // [W-Nick] Cloud nicking removed — uses local UsernameGenerator exclusively.
+         String generatedUsername = this.findAvailableUsername();
 
          String finalUsername = generatedUsername;
          if (finalUsername == null) {
@@ -803,18 +785,8 @@ public final class NameTagPlugin extends JavaPlugin implements INameTagAPI {
    @Override
    public void randomNick(Player player, String groupName) {
       this.getServer().getScheduler().runTaskAsynchronously(this, () -> {
-         String generatedUsername = null;
-         if (this.config().getBoolean("allow_cloud_nicking")) {
-            try {
-               generatedUsername = this.cloudNickService.getRandomNick();
-            } catch (Exception var6) {
-               this.getLogger().warning("[Cloud Nick] Cloud service unavailable, falling back to legacy: " + var6.getMessage());
-            }
-         }
-
-         if (generatedUsername == null) {
-            generatedUsername = this.findAvailableUsername();
-         }
+         // [W-Nick] Cloud nicking removed — uses local UsernameGenerator exclusively.
+         String generatedUsername = this.findAvailableUsername();
 
          String finalUsername = generatedUsername;
          if (finalUsername == null) {

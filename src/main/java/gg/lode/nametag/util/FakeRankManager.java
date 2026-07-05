@@ -11,7 +11,7 @@ import net.luckperms.api.query.QueryOptions;
 import org.jetbrains.annotations.Nullable;
 
 public class FakeRankManager {
-   private static final String ASSIGNABLE_PERMISSION = "lodestone.nametag.randomly_assignable";
+   private static final String ASSIGNABLE_PERMISSION = "wnick.rank.assignable";
    private final LuckPerms luckPerms;
 
    public FakeRankManager(LuckPerms luckPerms) {
@@ -21,7 +21,7 @@ public class FakeRankManager {
    /**
     * Returns the list of LuckPerms groups flagged as randomly assignable.
     * A group is assignable when it has the permission
-    * {@code lodestone.nametag.randomly_assignable} set to true.
+    * {@code wnick.rank.assignable} set to true.
     */
    public List<FakeRankManager.FakeRank> getAssignableRanks() {
       return this.luckPerms

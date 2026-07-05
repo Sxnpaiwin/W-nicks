@@ -19,7 +19,7 @@ public class NameTagCommand extends CommandAPICommand {
       );
       this.withSubcommand(
          new CommandAPICommand("refresh_player")
-            .withPermission("lodestone.commands.nametag.refresh_player")
+            .withPermission("wnick.admin.refresh_player")
             .withArguments(new Argument[]{new EntitySelectorArgument.OnePlayer("target")})
             .executes((sender, args) -> {
                if (args.get(0) instanceof Player target) {
@@ -28,13 +28,13 @@ public class NameTagCommand extends CommandAPICommand {
                }
             }, new ExecutorType[0])
       );
-      this.withSubcommand(new CommandAPICommand("reload").withPermission("lodestone.commands.nametag.reload").executes((sender, args) -> {
+      this.withSubcommand(new CommandAPICommand("reload").withPermission("wnick.admin.reload").executes((sender, args) -> {
          plugin.config().initialize();
          sender.sendMessage(MiniMessageHelper.deserialize("<gray><italic>[Name Tag configuration has been reloaded]"));
       }, new ExecutorType[0]));
       this.withSubcommand(
          new CommandAPICommand("debug")
-            .withPermission("lodestone.commands.nametag.debug")
+            .withPermission("wnick.admin.debug")
             .withArguments(new Argument[]{new EntitySelectorArgument.OnePlayer("target")})
             .executes((sender, args) -> {
                if (args.get(0) instanceof Player target) {

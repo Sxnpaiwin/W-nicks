@@ -12,7 +12,7 @@ import org.bukkit.entity.Player;
 public class RealNameCommand extends CommandAPICommand {
    public RealNameCommand(NameTagPlugin plugin) {
       super("realname");
-      this.withPermission("lodestone.nametag.commands.realname");
+      this.withPermission("wnick.commands.realname");
       this.withArguments(new Argument[]{new EntitySelectorArgument.OnePlayer("target")});
       this.executes((sender, args) -> {
          if (args.get(0) instanceof Player target) {

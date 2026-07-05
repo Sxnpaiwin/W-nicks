@@ -15,12 +15,12 @@ public class PlaceholderManager extends PlaceholderExpansion {
 
    @NotNull
    public String getIdentifier() {
-      return "nametag";
+      return "wnick";
    }
 
    @NotNull
    public String getAuthor() {
-      return "Lodestone";
+      return "Joehe";
    }
 
    @NotNull

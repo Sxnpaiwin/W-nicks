@@ -3,33 +3,22 @@
 This document explains how W-Nick is structured for contributors who want to
 understand or extend the codebase.
 
-## Background
-
-W-Nick is a **fork** of [Name-Tag v1.0.81](https://lode.gg/plugin/nametag)
-by Apollo30 / Lodestone. The original plugin is closed-source (only the
-public API JAR is open), so W-Nick's sources are **decompiled with
-[Vineflower](https://github.com/Vineflower/vineflower) 1.10.1** and then
-patched. Decompiled code may have minor oddities (variable names like
-`var9`, `forcex`/`textNoRankx` etc.) — these are Vineflower's naming for
-shadowed variables in switch cases and are left as-is where they don't
-cause bugs.
-
 ## Package layout
 
 ```
 gg.lode.nametag                  — main plugin package
   ├── NameTagPlugin              — main class, implements INameTagAPI
-  ├── PlaceholderManager         — PlaceholderAPI hook
+  ├── PlaceholderManager         — PlaceholderAPI hook (identifier: "wnick")
   ├── command/
   │   ├── NickCommand            — /nick command + listener for chat/death/etc.
-  │   ├── RandomNickCommand      — /randomnick (W-Nick: added -r flag)
-  │   ├── NickRankCommand        — /nickrank (NEW in W-Nick)
-  │   ├── WNickCommand           — /wnick master command (NEW in W-Nick)
+  │   ├── RandomNickCommand      — /randomnick (added -r flag)
+  │   ├── NickRankCommand        — /nickrank
+  │   ├── WNickCommand           — /wnick master command
   │   ├── NameTagCommand         — /nametag admin command
   │   └── RealNameCommand        — /realname
   ├── listeners/
   │   ├── PlayerInfoPacketListener  — packetevents hook for player info packets
-  │   └── AutoNickJoinListener      — re-applies saved nick on join (NEW in W-Nick)
+  │   └── AutoNickJoinListener      — re-applies saved nick on join
   ├── nms/
   │   └── PaperSkinManager       — Paper profile / skin manipulation
   ├── storage/
@@ -40,11 +29,9 @@ gg.lode.nametag                  — main plugin package
   │       └── MongoDBNameTagStorage — MongoDB storage
   └── util/
       ├── FakeRankManager        — LuckPerms group -> FakeRank mapping
-      │                           (W-Nick: added getAllRanks, resolveCaseInsensitive)
-      ├── CloudNickService       — random username cloud service
-      ├── MojangSkinFetcher      — Mojang API client
+      ├── MojangSkinFetcher      — Mojang API client (official APIs only)
       ├── SkinProvider           — random skin selection
-      └── UsernameGenerator      — legacy random username generator
+      └── UsernameGenerator      — local random username generator
 
 gg.lode.nametagapi               — public API (already bundled in main JAR)
   ├── INameTagAPI                — API interface
@@ -53,6 +40,27 @@ gg.lode.nametagapi               — public API (already bundled in main JAR)
       ├── NickPlayer             — per-player nick data record
       └── Skin                   — skin texture + signature record
 ```
+
+## Privacy audit
+
+W-Nick ships **no telemetry and no phone-home calls**. The following
+upstream features were removed in this fork:
+
+| Removed              | What it did                                                                                                    | Replacement                          |
+|----------------------|----------------------------------------------------------------------------------------------------------------|--------------------------------------|
+| `CloudNickService`   | Resolved the server's public IP via `api.ipify.org`, then uploaded every joining player's UUID + username + the server's IP + port to a third-party endpoint on every join. Also sent the IP + port as HTTP headers when fetching random usernames. | Deleted entirely. Random username generation uses the local `UsernameGenerator`. |
+| `Metrics(this, 24781)` | bStats analytics — sent server info (player count, version, etc.) to bstats.org using the upstream plugin's ID. | Removed. No telemetry is sent.      |
+| `VersionUpdater`     | On every server start, fetched `https://<third-party>/api/plugins/nametag/version` to check for updates.       | Removed. Use `/wnick version` instead. |
+| `allow_cloud_nicking` config | Gated the upstream phone-home.                                                                                  | Removed. The migration nulls out the key. |
+| `NickCommand.PlayerJoinEvent` phone-home | Called `cloudNickService.registerPlayer()` on every player join, uploading UUID + username + server IP + port. | Removed. The rest of the listener (loading saved nick from storage) is preserved. |
+
+The only outbound network calls remaining are:
+
+| Endpoint                                | When it's called                                  | Purpose                              |
+|-----------------------------------------|---------------------------------------------------|--------------------------------------|
+| `api.mojang.com/users/profiles/minecraft/<name>` | `/nick as <name>`, `/nick with_name <name>` (when `can_use_existing_players=false`) | Check if a username is taken by a real Mojang account. |
+| `sessionserver.mojang.com/session/minecraft/profile/<uuid>` | First time a player nicks, to capture their original skin | Fetch the player's original skin texture + signature so it can be restored on `/nick reset`. |
+| `api.mineskin.org/v2/skins/<id>`        | `/nick from_url <url>` (player-initiated only)    | Fetch a Mineskin skin by ID/URL.     |
 
 ## Key flows
 
@@ -96,33 +104,33 @@ gg.lode.nametagapi               — public API (already bundled in main JAR)
 
 ## Build process
 
-Because the upstream plugin bundles several closed-source libraries
-(PacketEvents, CommandAPI, BookshelfAPI, MongoDB driver, bStats, etc.),
-W-Nick is built by **repackaging** the original JAR:
+W-Nick is built by repackaging the original JAR (which bundles several
+closed-source libraries like PacketEvents, CommandAPI, BookshelfAPI, MongoDB
+driver, etc.):
 
-1. Decompile the original `Name-Tag-Paper-1.0.81.jar` with Vineflower.
-2. Patch the decompiled sources in `src/main/java/`.
-3. Compile the patched sources with JDK 21 against the original JAR's
+1. Patch the Java sources in `src/main/java/`.
+2. Compile the patched sources with JDK 21 against the original JAR's
    bundled classes plus Paper-API, LuckPerms-API, PlaceholderAPI, etc.
-4. Use `jar uf` to **replace** the patched `.class` files in a copy of the
+3. Use `jar uf` to **replace** the patched `.class` files in a copy of the
    original JAR (preserving all bundled libs).
-5. Replace `plugin.yml` and `config.yml` with the patched versions.
+4. Replace `plugin.yml` and `config.yml` with the patched versions.
 
 See `scripts/package.sh` for the exact commands.
 
 ## Key files to know
 
-| File | What it does | W-Nick changes |
-|------|--------------|----------------|
-| `NameTagPlugin.java` | Main plugin class, all nick/skin/rank operations | Added `prefixedMessage()`, registered `AutoNickJoinListener` and `WNickCommand`, fixed `setNickWithSkin` to honor `rankIdOverride`, config v5→v6 migration |
-| `FakeRankManager.java` | LuckPerms group → FakeRank mapping | Added `getAllRanks()`, `getRanksWithFormatting()`, `resolveRankIdCaseInsensitive()` |
-| `NickCommand.java` | `/nick` command | Fixed `as` branch typos (`rankIdx`/`rankId`, `sanitizedTextx`/`sanitizedText`) |
-| `RandomNickCommand.java` | `/randomnick` command | Added `-r <rank>` flag |
-| `NickRankCommand.java` | `/nickrank` command | **New file.** |
-| `WNickCommand.java` | `/wnick` command | **New file.** |
-| `AutoNickJoinListener.java` | Re-apply saved nick on join | **New file.** |
-| `plugin.yml` | Plugin metadata | Renamed to `W-Nick`, author `Joehe`, registered new commands + permissions |
-| `config.yml` | Default config | Added `message_prefix`, `auto_apply_nick_on_join`, `auto_assign_random_rank_on_random_nick` |
+| File | What it does |
+|------|--------------|
+| `NameTagPlugin.java` | Main plugin class, all nick/skin/rank operations. Removed `Metrics`, `VersionUpdater`, `CloudNickService`. Added `prefixedMessage()`, `AutoNickJoinListener`, `WNickCommand`. Fixed `setNickWithSkin` to honor `rankIdOverride`. Config v5→v6 migration. |
+| `FakeRankManager.java` | LuckPerms group → FakeRank mapping. Added `getAllRanks()`, `getRanksWithFormatting()`, `resolveRankIdCaseInsensitive()`. Renamed assignable permission to `wnick.rank.assignable`. |
+| `NickCommand.java` | `/nick` command. Fixed `as` branch typos. Removed `PlayerJoinEvent` phone-home call. Renamed all permissions. |
+| `RandomNickCommand.java` | `/randomnick` command. Added `-r <rank>` flag. Renamed permissions. |
+| `NickRankCommand.java` | `/nickrank` command. New file. |
+| `WNickCommand.java` | `/wnick` command. New file. |
+| `AutoNickJoinListener.java` | Re-apply saved nick on join. New file. |
+| `PlaceholderManager.java` | PlaceholderAPI hook. Identifier changed to `wnick`, author to `Joehe`. |
+| `plugin.yml` | Plugin metadata. Author `Joehe`, all permissions under `wnick.*`. |
+| `config.yml` | Default config. Removed `allow_cloud_nicking`, added `message_prefix` / `auto_apply_nick_on_join` / `auto_assign_random_rank_on_random_nick`. |
 
 ## Extending W-Nick
 
@@ -147,3 +155,12 @@ it returns `null`, LuckPerms isn't installed — handle that case gracefully.
 2. Bump `CONFIG_VERSION` in `NameTagPlugin.java` and add a migration case
    in `updateConfigToLatest()`.
 3. Read it via `plugin.config().getString(...)` / `getBoolean(...)` / etc.
+
+### Privacy review for new code
+Before merging any new feature, verify that:
+- It does not make any HTTP requests to third-party servers (only Mojang
+  and mineskin.org are acceptable, and only for legitimate skin/username
+  lookups).
+- It does not upload player data (UUIDs, usernames, IPs) anywhere.
+- It does not include any analytics / metrics calls.
+- It does not register a `PlayerJoinEvent` listener that exfiltrates data.

@@ -2,8 +2,8 @@ name: W-Nick
 version: "1.0.81-W-Nick"
 main: gg.lode.nametag.NameTagPlugin
 api-version: '1.21'
-authors: [Joehe, Apollo30]
-description: Fork of Name-Tag with extended LuckPerms support. Choose your fake rank when nicking.
+authors: [Joehe]
+description: LuckPerms-aware nick plugin with rank spoofing for Paper / Folia servers.
 website: https://github.com/Sxnpaiwin/W-nicks
 softdepend:
   - TAB
@@ -32,57 +32,72 @@ commands:
     description: W-Nick master command (help, info, version, reload).
     aliases: [wn]
 permissions:
-  lodestone.nametag.commands.nick:
+  wnick.commands.nick:
     description: Allows /nick
     default: op
-  lodestone.nametag.commands.nick.others:
+  wnick.commands.nick.others:
     description: Allows nicking other players
     default: op
-  lodestone.nametag.commands.randomnick:
+  wnick.commands.nick.reset:
+    description: Allows /nick reset
+    default: op
+  wnick.commands.nick.reset_all:
+    description: Allows /nick reset_all
+    default: op
+  wnick.commands.nick.save_all:
+    description: Allows /nick save_all
+    default: op
+  wnick.commands.nick.save_cached:
+    description: Allows /nick save_cached
+    default: op
+  wnick.commands.randomnick:
     description: Allows /randomnick
     default: op
-  lodestone.nametag.commands.randomnick.others:
+  wnick.commands.randomnick.others:
     description: Allows random-nicking other players
     default: op
-  lodestone.nametag.commands.realname:
+  wnick.commands.realname:
     description: Allows /realname
     default: true
-  lodestone.nametag.commands.nickrank:
+  wnick.commands.nickrank:
     description: Allows access to /nickrank
     default: op
-  lodestone.nametag.commands.nickrank.list:
+  wnick.commands.nickrank.list:
     description: Allows listing available ranks
     default: op
-  lodestone.nametag.commands.nickrank.set:
+  wnick.commands.nickrank.set:
     description: Allows setting a fake rank on yourself
     default: op
-  lodestone.nametag.commands.nickrank.clear:
+  wnick.commands.nickrank.clear:
     description: Allows clearing your fake rank
     default: op
-  lodestone.nametag.commands.nickrank.random:
+  wnick.commands.nickrank.random:
     description: Allows picking a random assignable rank
     default: op
-  lodestone.nametag.commands.nickrank.current:
+  wnick.commands.nickrank.current:
     description: Allows viewing your current fake rank
     default: op
-  lodestone.nametag.commands.nickrank.others:
+  wnick.commands.nickrank.others:
     description: Allows acting on other players' fake rank
     default: op
-  lodestone.nametag.commands.wnick:
+  wnick.commands.wnick:
     description: Allows access to /wnick
     default: op
-  lodestone.nametag.commands.wnick.info:
+  wnick.commands.wnick.info:
     description: Allows /wnick info on yourself
     default: op
-  lodestone.nametag.commands.wnick.info.others:
+  wnick.commands.wnick.info.others:
     description: Allows /wnick info on other players
     default: op
-  lodestone.commands.nametag.reload:
-    description: Allows /nametag reload and /wnick reload
+  wnick.admin.reload:
+    description: Allows /wnick reload and /nametag reload
     default: op
-  lodestone.commands.nametag.refresh_player:
+  wnick.admin.refresh_player:
     description: Allows /nametag refresh_player
     default: op
-  lodestone.commands.nametag.debug:
+  wnick.admin.debug:
     description: Allows /nametag debug
     default: op
+  wnick.rank.assignable:
+    description: Tags a LuckPerms group as randomly assignable for /nickrank random
+    default: false

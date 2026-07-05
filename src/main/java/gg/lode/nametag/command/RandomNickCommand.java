@@ -23,11 +23,11 @@ public class RandomNickCommand extends CommandAPICommand {
 
    public RandomNickCommand(NameTagPlugin plugin) {
       super("randomnick");
-      this.withPermission("lodestone.nametag.commands.randomnick");
+      this.withPermission("wnick.commands.randomnick");
       this.withOptionalArguments(
          new Argument[]{
             new FlagArgument("args", Set.of(), Set.of(), Set.of("skip"))
-               .withPermission("lodestone.nametag.commands.randomnick.others")
+               .withPermission("wnick.commands.randomnick.others")
                .replaceSuggestions((info, builder) -> {
                   String current = info.currentArg();
                   boolean endsWithSpace = info.currentInput().endsWith(" ");
@@ -111,7 +111,7 @@ public class RandomNickCommand extends CommandAPICommand {
                } else {
                   sender.sendMessage(MiniMessageHelper.deserialize("<red>This command can only be executed by players when no target is specified."));
                }
-            } else if (!sender.hasPermission("lodestone.nametag.commands.randomnick.others")) {
+            } else if (!sender.hasPermission("wnick.commands.randomnick.others")) {
                sender.sendMessage(MiniMessageHelper.deserialize("<red>You do not have permission to nick other players."));
             } else {
                Collection<Player> targets;

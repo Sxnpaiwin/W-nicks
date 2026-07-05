@@ -30,7 +30,7 @@ public class WNickCommand extends CommandAPICommand {
 
    public WNickCommand(NameTagPlugin plugin) {
       super("wnick");
-      this.withPermission("lodestone.nametag.commands.wnick");
+      this.withPermission("wnick.commands.wnick");
       this.withAliases("wn");
 
       // No-arg: show help
@@ -59,17 +59,17 @@ public class WNickCommand extends CommandAPICommand {
       // /wnick info [target]
       this.withSubcommand(
          new CommandAPICommand("info")
-            .withPermission("lodestone.nametag.commands.wnick.info")
+            .withPermission("wnick.commands.wnick.info")
             .withOptionalArguments(
                new Argument[]{
                   new EntitySelectorArgument.OnePlayer("target")
-                     .withPermission("lodestone.nametag.commands.wnick.info.others")
+                     .withPermission("wnick.commands.wnick.info.others")
                }
             )
             .executes((sender, args) -> {
                Player target;
                if (args.get("target") instanceof Player p) {
-                  if (!sender.hasPermission("lodestone.nametag.commands.wnick.info.others") && p != sender) {
+                  if (!sender.hasPermission("wnick.commands.wnick.info.others") && p != sender) {
                      sender.sendMessage(plugin.prefixedMessage("<red>You do not have permission to view other players' info."));
                      return;
                   }
@@ -89,7 +89,7 @@ public class WNickCommand extends CommandAPICommand {
       // /wnick reload
       this.withSubcommand(
          new CommandAPICommand("reload")
-            .withPermission("lodestone.commands.nametag.reload")
+            .withPermission("wnick.admin.reload")
             .executes((sender, args) -> {
                plugin.config().initialize();
                sender.sendMessage(plugin.prefixedMessage("<gray><italic>Configuration reloaded."));
