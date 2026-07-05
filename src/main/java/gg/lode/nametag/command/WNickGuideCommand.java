@@ -92,34 +92,42 @@ public class WNickGuideCommand extends CommandAPICommand {
          Component.text("Click an action below to run a command instantly:", NamedTextColor.GRAY)
       ));
 
-      // Action buttons — each runs a real command via DialogAction.commandTemplate.
-      // The "commandTemplate" action is the safest way to dispatch commands from
-      // a dialog button; it uses the vanilla command dispatcher, so all permission
-      // checks still apply.
+      // Action buttons — each runs a real command via DialogAction.staticAction
+      // + ClickEvent.runCommand. This is the correct way to dispatch a static
+      // command from a dialog button.
+      //
+      // NOTE: We deliberately do NOT use DialogAction.commandTemplate(...) here.
+      // That method expects a Minecraft macro string with at least one $variable
+      // (e.g. "nick $player"). Passing a plain command like "nickrank list"
+      // throws IllegalArgumentException: No variables in macro.
+      //
+      // staticAction(ClickEvent.runCommand("/cmd")) runs the command through
+      // the vanilla command dispatcher, so all permission checks still apply.
+      // The leading "/" is required by ClickEvent.runCommand.
       List<ActionButton> actions = new ArrayList<>();
       actions.add(ActionButton.builder(Component.text("List LuckPerms ranks", GREEN))
          .tooltip(Component.text("/nickrank list — see every group with its prefix/suffix preview"))
-         .action(DialogAction.commandTemplate("nickrank list"))
+         .action(DialogAction.staticAction(net.kyori.adventure.text.event.ClickEvent.runCommand("/nickrank list")))
          .build());
       actions.add(ActionButton.builder(Component.text("Pick a fake rank", GREEN))
          .tooltip(Component.text("/nickrank set <rank> — opens a list you can click"))
-         .action(DialogAction.commandTemplate("nickrank list"))
+         .action(DialogAction.staticAction(net.kyori.adventure.text.event.ClickEvent.runCommand("/nickrank list")))
          .build());
       actions.add(ActionButton.builder(Component.text("Random nick", ACCENT))
          .tooltip(Component.text("/randomnick — generate a random nick with a random rank"))
-         .action(DialogAction.commandTemplate("randomnick"))
+         .action(DialogAction.staticAction(net.kyori.adventure.text.event.ClickEvent.runCommand("/randomnick")))
          .build());
       actions.add(ActionButton.builder(Component.text("Reset my nick", RED))
          .tooltip(Component.text("/nick reset — restore your original name and skin"))
-         .action(DialogAction.commandTemplate("nick reset"))
+         .action(DialogAction.staticAction(net.kyori.adventure.text.event.ClickEvent.runCommand("/nick reset")))
          .build());
       actions.add(ActionButton.builder(Component.text("Show my info", NamedTextColor.AQUA))
          .tooltip(Component.text("/wnick info — full debug view in chat"))
-         .action(DialogAction.commandTemplate("wnick info"))
+         .action(DialogAction.staticAction(net.kyori.adventure.text.event.ClickEvent.runCommand("/wnick info")))
          .build());
       actions.add(ActionButton.builder(Component.text("Help in chat", NamedTextColor.WHITE))
          .tooltip(Component.text("/wnick help — full command list"))
-         .action(DialogAction.commandTemplate("wnick help"))
+         .action(DialogAction.staticAction(net.kyori.adventure.text.event.ClickEvent.runCommand("/wnick help")))
          .build());
 
       // Exit button — null action just closes the dialog.
