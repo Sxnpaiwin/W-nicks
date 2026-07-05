@@ -256,7 +256,12 @@ public class NickCommand extends CommandAPICommand implements Listener {
 
    /**
     * /nick as <name> — nick as an existing Minecraft player (copies skin + name).
-    * Preserves the existing fake rank if no -r flag is passed.
+    *
+    * Rank assignment logic (matches /randomnick behaviour):
+    *   1. If -r <rank> is passed → use that rank
+    *   2. Else if player already has a fake rank set → preserve it
+    *   3. Else if auto_assign_random_rank_on_random_nick is true → pick a random rank
+    *   4. Else → no rank assigned
     */
    private void handleAs(org.bukkit.command.CommandSender sender, Player target, String originalName, String text) {
       boolean force = Flags.hasFlags(text, "f");
@@ -275,10 +280,13 @@ public class NickCommand extends CommandAPICommand implements Listener {
          return;
       }
 
-      // Save the current fake rank so we can restore it after the reset.
+      // Resolve the final rank id using the same logic as /randomnick:
+      //   - explicit -r flag wins
+      //   - else preserve existing rank
+      //   - else auto-assign a random rank (if enabled in config)
       NickPlayer existingData = plugin.getPlayerCache().get(target.getUniqueId());
-      String preservedRankId = (rankId != null) ? rankId
-         : (existingData != null ? existingData.getFakeRankId() : null);
+      String existingRankId = (existingData != null) ? existingData.getFakeRankId() : null;
+      String effectiveRankId = resolveRankForNick(target, rankId, existingRankId);
 
       Tasks.runAsync(plugin, () -> {
          if (!plugin.config().getBoolean("can_use_existing_players") && !force && MojangSkinFetcher.fetchUUID(sanitizedText) != null) {
@@ -290,11 +298,11 @@ public class NickCommand extends CommandAPICommand implements Listener {
 
             Tasks.run(plugin, () -> {
                plugin.setNickFromPlayer(target, sanitizedText);
-               // Restore or set the fake rank
-               if (preservedRankId != null) {
+               // Apply the resolved rank
+               if (effectiveRankId != null) {
                   NickPlayer nickData = plugin.getPlayerCache().get(target.getUniqueId());
                   if (nickData != null) {
-                     nickData.setFakeRankId(preservedRankId);
+                     nickData.setFakeRankId(effectiveRankId);
                      plugin.getStorageManager().getStorage().savePlayer(nickData);
                      // Refresh TAB display so the rank prefix/suffix shows
                      if (plugin.getServer().getPluginManager().isPluginEnabled("TAB")) {
@@ -303,7 +311,7 @@ public class NickCommand extends CommandAPICommand implements Listener {
                   }
                }
             });
-            String rankMsg = preservedRankId != null ? " <gray>(rank: " + preservedRankId + ")" : "";
+            String rankMsg = effectiveRankId != null ? " <gray>(rank: " + effectiveRankId + ")" : "";
             sender.sendMessage(MiniMsg.deserialize("Successfully nicked " + originalName + " as " + sanitizedText + rankMsg));
          }
       });
@@ -311,7 +319,8 @@ public class NickCommand extends CommandAPICommand implements Listener {
 
    /**
     * /nick with_name <name> — set a custom nickname (no skin change).
-    * Preserves the existing fake rank if no -r flag is passed.
+    *
+    * Uses the same rank assignment logic as /nick as — see {@link #handleAs}.
     */
    private void handleWithName(org.bukkit.command.CommandSender sender, Player target, String originalName, String text) {
       boolean force = Flags.hasFlags(text, "f");
@@ -336,10 +345,10 @@ public class NickCommand extends CommandAPICommand implements Listener {
          return;
       }
 
-      // Preserve existing rank if no -r flag
+      // Resolve the final rank id using the same logic as /nick as:
       NickPlayer existingData = plugin.getPlayerCache().get(target.getUniqueId());
-      String effectiveRankId = (rankId != null) ? rankId
-         : (existingData != null ? existingData.getFakeRankId() : null);
+      String existingRankId = (existingData != null) ? existingData.getFakeRankId() : null;
+      String effectiveRankId = resolveRankForNick(target, rankId, existingRankId);
 
       plugin.setNickname(target, rawText);
       if (effectiveRankId != null) {
@@ -353,10 +362,45 @@ public class NickCommand extends CommandAPICommand implements Listener {
          }
       }
 
+      String rankMsg = effectiveRankId != null ? " <gray>(rank: " + effectiveRankId + ")" : "";
       sender.sendMessage(
          MiniMsg.deserialize("Successfully set " + originalName + "'s name to ")
             .append(MiniMsg.deserialize(MiniMsg.convertAmpersandToMiniMessage(rawText)))
+            .append(MiniMsg.deserialize(rankMsg))
       );
+   }
+
+   /**
+    * Resolve the fake rank to use for a /nick as or /nick with_name operation.
+    *
+    * Matches the logic in {@code NameTagPlugin.setNickWithSkin}:
+    *   1. If an explicit {@code -r <rankId>} was passed (and resolves to a real
+    *      LuckPerms group), use it.
+    *   2. Else if the player already has a fake rank set, preserve it.
+    *   3. Else if {@code auto_assign_random_rank_on_random_nick} is true (the
+    *      default) and LuckPerms is hooked, pick a random assignable rank.
+    *   4. Else return null (no rank).
+    */
+   private String resolveRankForNick(Player target, String explicitRankId, String existingRankId) {
+      if (plugin.getFakeRankManager() == null) return null;
+
+      // 1. Explicit -r flag
+      if (explicitRankId != null) {
+         String resolved = plugin.getFakeRankManager().resolveRankIdCaseInsensitive(explicitRankId);
+         if (resolved != null) return resolved;
+      }
+
+      // 2. Preserve existing rank
+      if (existingRankId != null) return existingRankId;
+
+      // 3. Auto-assign random rank
+      if (plugin.config().getBoolean("auto_assign_random_rank_on_random_nick", true)) {
+         wnick.util.FakeRankManager.FakeRank random = plugin.getFakeRankManager().getRandomRank();
+         return random != null ? random.id() : null;
+      }
+
+      // 4. No rank
+      return null;
    }
 
    /**
