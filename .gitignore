@@ -3,6 +3,9 @@ dist/
 *.jar
 !lib/*.jar
 
+# Dev notes / research (lives in the GitHub wiki now)
+docs/
+
 # Compiled class files
 *.class
 build/
