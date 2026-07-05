@@ -3,6 +3,36 @@
 All notable changes to W-Nick are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [Unreleased] — Paper plugin conversion + Dialog API
+
+### Converted to a Paper plugin
+- Added `paper-plugin.yml` alongside the existing `plugin.yml` (the hybrid
+  pattern recommended by PaperMC). The Paper descriptor explicitly declares
+  W-Nick as a Paper plugin with structured dependencies — LuckPerms, TAB,
+  PlaceholderAPI all loaded `BEFORE` with `required: false`.
+- Bumped `api-version` from `'1.21'` to `'1.21.8'` to gate access to the
+  Paper Dialog API.
+
+### Added — `/wnick guide` (Paper Dialog API)
+- New subcommand `/wnick guide` that opens an interactive Paper Dialog
+  (introduced in Paper 1.21.7-1.21.8).
+- The dialog shows:
+  - The player's current nick status (nicked? fake rank? LuckPerms hooked?)
+  - A list of clickable action buttons that run real commands via
+    `DialogAction.commandTemplate(...)`
+- One-click shortcuts for:
+  - `/nickrank list` — list LuckPerms ranks
+  - `/nickrank set` — pick a fake rank
+  - `/randomnick` — generate a random nick
+  - `/nick reset` — restore your original name and skin
+  - `/wnick info` — full debug view in chat
+  - `/wnick help` — full command list in chat
+- Console fallback: when the sender isn't a player (or Paper is too old to
+  support dialogs), the command degrades gracefully to a chat-based guide.
+- Implementation uses `Dialog.create(b -> b.empty().base(...).type(...))`
+  (ad-hoc runtime dialog, no registry registration needed).
+- New permission: `wnick.commands.wnick.guide` (default: op)
+
 ## [1.0.81-W-Nick] — 2026-07-05
 
 ### Branding

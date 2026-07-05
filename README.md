@@ -44,12 +44,26 @@ You can also pass `-r <rank>` directly to `/nick` and `/randomnick`:
 
 ### W-Nick extras
 - `/wnick` — friendly help screen showing every command
+- `/wnick guide` — **interactive Paper Dialog** (requires Paper 1.21.8+)
+  that walks the player through every feature with clickable action
+  buttons. The dialog shows your live nick status and has one-click
+  shortcuts for `/nickrank list`, `/randomnick`, `/nick reset`, `/wnick info`,
+  and `/wnick help`. Players on older Paper versions or running from
+  console fall back to a chat-based guide automatically.
 - `/wnick info [player]` — full debug view (UUID, original name, current
   nick, skin, fake rank, rank preview)
 - `/wnick version` / `/wnick reload`
 - Configurable message prefix (`message_prefix` in `config.yml`)
 - Auto-apply saved nick on join (`auto_apply_nick_on_join` in `config.yml`)
   — players who reconnect after a restart get their nick back automatically
+
+### Paper plugin format
+W-Nick ships **both** `plugin.yml` and `paper-plugin.yml` in the same JAR
+(the hybrid pattern recommended by PaperMC). The `paper-plugin.yml`
+explicitly declares W-Nick as a Paper plugin with structured dependencies
+(LuckPerms, TAB, PlaceholderAPI all loaded `BEFORE` with `required: false`).
+The legacy `plugin.yml` is kept for command registration via CommandAPI.
+Requires **Paper 1.21.8+** for the Dialog API (`api-version: '1.21.8'`).
 
 ### Other integrations
 - **TAB** (optional) — when installed, W-Nick pushes the spoofed prefix and
@@ -72,20 +86,21 @@ W-Nick ships **no telemetry and no phone-home calls**:
 
 ## Quick start
 
-1. Install [LuckPerms](https://luckperms.net/) (required for rank spoofing).
-2. (Optional) Install [TAB](https://github.com/NEZNAMY/TAB) and
+1. **Install Paper 1.21.8+** (required for the Paper Dialog API).
+2. Install [LuckPerms](https://luckperms.net/) (required for rank spoofing).
+3. (Optional) Install [TAB](https://github.com/NEZNAMY/TAB) and
    [PlaceholderAPI](https://github.com/HelpChat/PlaceholderAPI) for full
    feature parity.
-3. Download `W-Nick-1.0.81.jar` from the [releases page](../../releases) and
+4. Download `W-Nick-1.0.81.jar` from the [releases page](../../releases) and
    drop it into your server's `plugins/` folder.
-4. Restart your server.
-5. In LuckPerms, tag a group as randomly assignable:
+5. Restart your server.
+6. In LuckPerms, tag a group as randomly assignable:
    ```
    /lp group vip permission set wnick.rank.assignable true
    ```
-6. In-game, run `/nickrank list` to see available ranks, then
-   `/nickrank set vip` to pick one, then `/nick random` to apply a random
-   nick with that rank.
+7. In-game, run `/wnick guide` to open the interactive guide dialog, or
+   `/nickrank list` to see available ranks, then `/nickrank set vip` to
+   pick one, then `/nick random` to apply a random nick with that rank.
 
 ---
 
@@ -110,6 +125,7 @@ W-Nick ships **no telemetry and no phone-home calls**:
 | `wnick.commands.nickrank.current`           | op      | View your current fake rank              |
 | `wnick.commands.nickrank.others`            | op      | Act on other players' fake rank          |
 | `wnick.commands.wnick`                      | op      | Access to `/wnick`                       |
+| `wnick.commands.wnick.guide`                | op      | Open the Paper Dialog guide              |
 | `wnick.commands.wnick.info`                 | op      | View your own nick info                  |
 | `wnick.commands.wnick.info.others`          | op      | View other players' nick info            |
 | `wnick.admin.reload`                        | op      | `/wnick reload` and `/nametag reload`    |

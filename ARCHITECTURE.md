@@ -13,7 +13,8 @@ gg.lode.nametag                  — main plugin package
   │   ├── NickCommand            — /nick command + listener for chat/death/etc.
   │   ├── RandomNickCommand      — /randomnick (added -r flag)
   │   ├── NickRankCommand        — /nickrank
-  │   ├── WNickCommand           — /wnick master command
+  │   ├── WNickCommand           — /wnick master command (help/info/guide/version/reload)
+  │   ├── WNickGuideCommand      — /wnick guide (Paper Dialog API, requires 1.21.8+)
   │   ├── NameTagCommand         — /nametag admin command
   │   └── RealNameCommand        — /realname
   ├── listeners/
@@ -63,6 +64,31 @@ The only outbound network calls remaining are:
 | `api.mineskin.org/v2/skins/<id>`        | `/nick from_url <url>` (player-initiated only)    | Fetch a Mineskin skin by ID/URL.     |
 
 ## Key flows
+
+### `/wnick guide` (Paper Dialog API)
+1. Player runs `/wnick guide` (requires Paper 1.21.8+ and the
+   `wnick.commands.wnick.guide` permission).
+2. `WNickGuideCommand` checks if the sender is a `Player`:
+   - **Player:** builds a `Dialog` via `Dialog.create(b -> b.empty()...)`
+     and calls `player.showDialog(dialog)`. The dialog is built ad-hoc
+     (no registry registration needed — that path would require a
+     `PluginBootstrap` and `paper-plugin.yml`).
+   - **Console / non-player:** falls back to a chat-based guide.
+3. The dialog uses:
+   - `DialogBase` with a title and a list of `PlainMessageDialogBody`
+     entries showing the player's live nick status
+   - `DialogType.multiAction(...)` for a grid of clickable action buttons
+4. Each action button uses `DialogAction.commandTemplate("nickrank list")`
+   (or similar) so the command runs through the vanilla command dispatcher
+   when clicked — all permission checks still apply normally.
+5. The dialog has an "exit" button with `action(null)` that just closes
+   the dialog.
+
+If you want to extend the dialog (e.g. add a text input for setting a
+custom nickname directly from the dialog), see the research notes in
+`docs/dialog-research.md` for examples of `DialogInput.text(...)`,
+`DialogInput.bool(...)`, `DialogInput.numberRange(...)`, and
+`PlayerCustomClickEvent` handling.
 
 ### Setting a nickname
 1. Player runs `/nick with_name Steve` (or `/nick as Steve`, `/randomnick`).

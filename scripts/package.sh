@@ -19,15 +19,18 @@ for cls in $(find gg/lode/nametag -name "*.class"); do
     /home/z/my-project/jdk21/bin/jar uf "$FINAL_JAR" "$cls"
 done
 
-# 2) Replace plugin.yml and config.yml with our patched versions
+# 2) Replace plugin.yml, paper-plugin.yml and config.yml with our patched versions
 cd "$PATCH_DIR"
-/home/z/my-project/jdk21/bin/jar uf "$FINAL_JAR" plugin.yml config.yml
+/home/z/my-project/jdk21/bin/jar uf "$FINAL_JAR" plugin.yml paper-plugin.yml config.yml
 
 echo "=== Final JAR contents (W-Nick classes) ==="
 unzip -l "$FINAL_JAR" | grep "gg/lode/nametag/" | grep -v packetevents
 echo ""
 echo "=== plugin.yml (head) ==="
 unzip -p "$FINAL_JAR" plugin.yml | head -15
+echo ""
+echo "=== paper-plugin.yml ==="
+unzip -p "$FINAL_JAR" paper-plugin.yml | head -20
 echo ""
 echo "=== Final JAR size ==="
 ls -la "$FINAL_JAR"

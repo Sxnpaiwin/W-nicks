@@ -1,9 +1,9 @@
 name: W-Nick
 version: "1.0.81-W-Nick"
 main: gg.lode.nametag.NameTagPlugin
-api-version: '1.21'
+api-version: '1.21.8'
 authors: [Joehe]
-description: LuckPerms-aware nick plugin with rank spoofing for Paper / Folia servers.
+description: LuckPerms-aware nick plugin with rank spoofing and Paper Dialog API integration.
 website: https://github.com/Sxnpaiwin/W-nicks
 softdepend:
   - TAB
@@ -29,7 +29,7 @@ commands:
       /nickrank random [targets]     - pick a random assignable rank
       /nickrank current [target]     - show your current fake rank
   wnick:
-    description: W-Nick master command (help, info, version, reload).
+    description: W-Nick master command (help, info, guide, version, reload).
     aliases: [wn]
 permissions:
   wnick.commands.nick:
@@ -82,6 +82,9 @@ permissions:
     default: op
   wnick.commands.wnick:
     description: Allows access to /wnick
+    default: op
+  wnick.commands.wnick.guide:
+    description: Allows /wnick guide (opens the Paper Dialog)
     default: op
   wnick.commands.wnick.info:
     description: Allows /wnick info on yourself

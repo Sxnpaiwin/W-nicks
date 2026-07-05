@@ -1,0 +1,31 @@
+# Paper plugin descriptor for W-Nick.
+#
+# This file is opt-in: by including it alongside plugin.yml, Paper loads W-Nick
+# via the modern Paper plugin loader. The legacy plugin.yml is kept for
+# command/permission registration (the hybrid pattern recommended by PaperMC
+# for plugins that still use CommandAPI for command registration).
+#
+# See:
+#   https://docs.papermc.io/paper/dev/paper-plugins
+#   https://docs.papermc.io/paper/dev/dialogs
+name: W-Nick
+version: "1.0.81-W-Nick"
+main: gg.lode.nametag.NameTagPlugin
+api-version: '1.21.8'
+authors: [Joehe]
+description: LuckPerms-aware nick plugin with Paper Dialog API integration.
+website: https://github.com/Sxnpaiwin/W-nicks
+dependencies:
+  server:
+    LuckPerms:
+      load: BEFORE
+      required: false
+      join-classpath: false
+    TAB:
+      load: BEFORE
+      required: false
+      join-classpath: false
+    PlaceholderAPI:
+      load: BEFORE
+      required: false
+      join-classpath: false

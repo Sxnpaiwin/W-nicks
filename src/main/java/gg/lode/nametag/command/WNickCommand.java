@@ -42,6 +42,9 @@ public class WNickCommand extends CommandAPICommand {
             .executes((dev.jorel.commandapi.nametag.executors.CommandExecutor) (sender, args) -> sendHelp(sender, plugin), new ExecutorType[0])
       );
 
+      // /wnick guide — opens an interactive Paper Dialog (requires Paper 1.21.8+)
+      this.withSubcommand(new WNickGuideCommand(plugin));
+
       // /wnick version
       this.withSubcommand(
          new CommandAPICommand("version")
@@ -108,6 +111,8 @@ public class WNickCommand extends CommandAPICommand {
       sender.sendMessage(MiniMessageHelper.deserialize("<gray>   Manage the LuckPerms fake rank independently of your nick.</gray>"));
       sender.sendMessage(MiniMessageHelper.deserialize("<yellow>/realname <nick>"));
       sender.sendMessage(MiniMessageHelper.deserialize("<gray>   Look up who's behind a nick.</gray>"));
+      sender.sendMessage(MiniMessageHelper.deserialize("<yellow>/wnick guide"));
+      sender.sendMessage(MiniMessageHelper.deserialize("<gray>   Open this help as an interactive in-game dialog (Paper 1.21.8+).</gray>"));
       sender.sendMessage(MiniMessageHelper.deserialize("<yellow>/wnick info [player]"));
       sender.sendMessage(MiniMessageHelper.deserialize("<gray>   Show all known nick state for yourself or someone else.</gray>"));
       sender.sendMessage(MiniMessageHelper.deserialize("<yellow>/wnick version / reload"));
