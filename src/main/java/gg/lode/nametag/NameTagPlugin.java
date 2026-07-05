@@ -265,10 +265,25 @@ public final class NameTagPlugin extends JavaPlugin implements INameTagAPI {
       }
 
       if (this.getServer().getPluginManager().isPluginEnabled("LuckPerms")) {
-         LuckPerms luckPerms = (LuckPerms)this.getServer().getServicesManager().load(LuckPerms.class);
-         if (luckPerms != null) {
-            this.fakeRankManager = new FakeRankManager(luckPerms);
-            this.getLogger().info("Hooked into LuckPerms! Fake rank support enabled. Use /nickrank to manage ranks.");
+         try {
+            LuckPerms luckPerms = (LuckPerms)this.getServer().getServicesManager().load(LuckPerms.class);
+            if (luckPerms != null) {
+               this.fakeRankManager = new FakeRankManager(luckPerms);
+               this.getLogger().info("Hooked into LuckPerms! Fake rank support enabled. Use /nickrank to manage ranks.");
+            } else {
+               this.getLogger().warning("LuckPerms is installed but its service is not registered. Fake rank support disabled.");
+            }
+         } catch (NoClassDefFoundError classErr) {
+            // The PaperPluginClassLoader may isolate LuckPerms's classes
+            // even when the plugin is enabled — this happens when
+            // paper-plugin.yml has join-classpath: false for LuckPerms.
+            // Fall back to no-LuckPerms mode instead of crashing onEnable.
+            this.getLogger().warning("LuckPerms is installed but its API classes are not visible to W-Nick's classloader. Fake rank support disabled.");
+            this.getLogger().warning("If you are using paper-plugin.yml, make sure 'join-classpath: true' is set for LuckPerms.");
+            this.getLogger().warning("Underlying error: " + classErr.getMessage());
+         } catch (Exception ex) {
+            this.getLogger().warning("Failed to hook into LuckPerms: " + ex.getMessage());
+            ex.printStackTrace();
          }
       }
 

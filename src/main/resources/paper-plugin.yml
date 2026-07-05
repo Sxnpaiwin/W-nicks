@@ -5,6 +5,11 @@
 # command/permission registration (the hybrid pattern recommended by PaperMC
 # for plugins that still use CommandAPI for command registration).
 #
+# `join-classpath: true` is REQUIRED for all soft-dependencies because W-Nick
+# directly references their classes at runtime (LuckPerms API, TAB API,
+# PlaceholderAPI expansion class). Without it, the PaperPluginClassLoader
+# isolates them and we get NoClassDefFoundError at enable time.
+#
 # See:
 #   https://docs.papermc.io/paper/dev/paper-plugins
 #   https://docs.papermc.io/paper/dev/dialogs
@@ -20,12 +25,13 @@ dependencies:
     LuckPerms:
       load: BEFORE
       required: false
-      join-classpath: false
+      join-classpath: true
     TAB:
       load: BEFORE
       required: false
-      join-classpath: false
+      join-classpath: true
     PlaceholderAPI:
       load: BEFORE
       required: false
-      join-classpath: false
+      join-classpath: true
+
