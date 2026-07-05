@@ -1,0 +1,37 @@
+# Build artifacts
+dist/
+*.jar
+!lib/*.jar
+
+# Compiled class files
+*.class
+build/
+out/
+target/
+
+# IDE / editor
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+.project
+.classpath
+.settings/
+*.swp
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs / runtime
+*.log
+logs/
+
+# Decompile intermediates
+decompiled/
+
+# JDK downloads
+jdk21/
+*.tar.gz

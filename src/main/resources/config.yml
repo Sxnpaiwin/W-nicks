@@ -1,0 +1,41 @@
+version: 6
+can_use_existing_players: true
+
+# This feature is highly experimental. Do not enable unless you know what you're doing. No support will be provided.
+should_spoof_uuid: false
+
+# To ensure random nicking is the best we can make it, we'd like to gather information about existing users in your server.
+# All we will be storing is the user's username and uuid.
+# This allows us to help create random usernames that look realistic instead of "SteveGardener2002".
+#
+# If set to false, it's okay, you will default back to our legacy nicking solution.
+allow_cloud_nicking: true
+
+# [W-Nick] Prefix prepended to most user-facing plugin messages.
+# Supports MiniMessage formatting. Set to "" to disable the prefix entirely.
+message_prefix: "<gold>[W-Nick]</gold> "
+
+# [W-Nick] When true, players who log in with a previously saved nick
+# (e.g. after a server restart) will automatically have their nick, skin,
+# and fake rank re-applied.
+auto_apply_nick_on_join: true
+
+# [W-Nick] When true, /nick random (and the API randomNick()) will
+# automatically pick a random assignable rank from LuckPerms for the player,
+# if they don't already have a fake rank set via /nickrank set.
+# Set to false to disable random rank assignment entirely.
+auto_assign_random_rank_on_random_nick: true
+
+# Storage Configuration
+storage:
+  # Storage type: LOCAL or MONGODB
+  type: "LOCAL"
+  mongodb:
+    # Connection URI (e.g., mongodb://localhost:27017)
+    uri: "mongodb://localhost:27017"
+    # Database name
+    database: "nametag"
+    # Collection name
+    collection: "players"
+    # Connection pool size
+    pool-size: 10
