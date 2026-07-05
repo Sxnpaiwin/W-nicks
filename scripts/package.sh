@@ -64,10 +64,15 @@ rm -rf net/infumia
 rm -rf META-INF/maven/net.infumia
 echo "  stripped net/infumia/titleupdater/ (unused title library)"
 
-# 5. PacketEvents bStats — we removed the Metrics(this, 24781) call, so
-#    these classes are dead weight. Saves ~104 KB uncompressed.
-rm -rf io/github/retrooper/packetevents/nametag/bstats
-echo "  stripped io/github/retrooper/packetevents/nametag/bstats/ (unused bStats)"
+# 5. PacketEvents bStats — NOTE: we do NOT strip these! Even though W-Nick
+#    no longer calls Metrics(this, 24781), the PacketEvents
+#    SpigotPacketEventsBuilder$1 class references bstats/bukkit/Metrics,
+#    bstats/charts/CustomChart, and bstats/charts/SimplePie in its method
+#    signatures. The JVM verifies these on class load, so stripping them
+#    causes NoClassDefFoundError at onLoad() time. The entire bStats
+#    package is only ~51 KB compressed — not worth the risk.
+# (Previously stripped; restored after crash report from user.)
+echo "  kept io/github/retrooper/packetevents/nametag/bstats/ (PacketEvents requires it)"
 
 # 6. GeyserUtil — we don't support GeyserMC, this is dead weight.
 rm -f io/github/retrooper/packetevents/nametag/util/GeyserUtil.class
