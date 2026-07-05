@@ -3,112 +3,153 @@
 All notable changes to W-Nick are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
-## [Unreleased] — Paper plugin conversion + Dialog API
-
-### Converted to a Paper plugin
-- Added `paper-plugin.yml` alongside the existing `plugin.yml` (the hybrid
-  pattern recommended by PaperMC). The Paper descriptor explicitly declares
-  W-Nick as a Paper plugin with structured dependencies — LuckPerms, TAB,
-  PlaceholderAPI all loaded `BEFORE` with `required: false`.
-- Bumped `api-version` from `'1.21'` to `'1.21.8'` to gate access to the
-  Paper Dialog API.
-
-### Added — `/wnick guide` (Paper Dialog API)
-- New subcommand `/wnick guide` that opens an interactive Paper Dialog
-  (introduced in Paper 1.21.7-1.21.8).
-- The dialog shows:
-  - The player's current nick status (nicked? fake rank? LuckPerms hooked?)
-  - A list of clickable action buttons that run real commands via
-    `DialogAction.commandTemplate(...)`
-- One-click shortcuts for:
-  - `/nickrank list` — list LuckPerms ranks
-  - `/nickrank set` — pick a fake rank
-  - `/randomnick` — generate a random nick
-  - `/nick reset` — restore your original name and skin
-  - `/wnick info` — full debug view in chat
-  - `/wnick help` — full command list in chat
-- Console fallback: when the sender isn't a player (or Paper is too old to
-  support dialogs), the command degrades gracefully to a chat-based guide.
-- Implementation uses `Dialog.create(b -> b.empty().base(...).type(...))`
-  (ad-hoc runtime dialog, no registry registration needed).
-- New permission: `wnick.commands.wnick.guide` (default: op)
-
-## [1.0.81-W-Nick] — 2026-07-05
-
-### Branding
-- Plugin name: `W-Nick`
-- Author: `Joehe`
-- Version string: `v1.0.81-W-Nick`
-- Repository: https://github.com/Sxnpaiwin/W-nicks
-- PlaceholderAPI identifier: `wnick` (placeholders are now `%wnick_*%`)
-
-### Privacy / backdoor removal
-- **Removed CloudNickService** — the upstream "cloud nicking" feature was a
-  phone-home that resolved the server's public IP via `api.ipify.org` and
-  uploaded every joining player's UUID + username + the server's IP + port
-  to a third-party endpoint on every join. All of that is gone. Random
-  username generation now uses the local `UsernameGenerator` exclusively.
-- **Removed bStats metrics** — the `new Metrics(this, 24781)` call in
-  `onLoad()` is gone. No telemetry is sent.
-- **Removed VersionUpdater** — the version-checker that hit a third-party
-  URL on every server start is gone.
-- **Removed `allow_cloud_nicking` config option** — the migration now nulls
-  out the key on existing configs.
-- The only outbound network calls remaining are to **Mojang's official
-  APIs** (username lookups + skin fetches) and **mineskin.org** (only when
-  a player explicitly runs `/nick from_url <url>`).
-
-### Bug fixes
-- **`/nick as <name> -r <rank>` now actually applies the rank.** The
-  original build had decompilation-introduced variable typos (`rankIdx` /
-  `rankId`, `sanitizedTextx` / `sanitizedText`) that made the `-r` flag
-  silently fail in the `as` branch. Both `as` and `with_name` now
-  correctly persist the fake rank to the player's storage.
-- **`setNickWithSkin(...)` no longer overwrites a chosen rank.** The
-  method always called `getRandomRank()` and replaced whatever the player
-  had set. Now:
-  1. If `rankIdOverride` is passed (e.g. via `/nick random -r vip`), it
-     is honored.
-  2. If the player already has a fake rank set via `/nickrank set`, it
-     is preserved across `/nick random`.
+## [1.0.81-W-Nick] — 2026-07-06
 
 ### Added
-- **`/nickrank` command** (alias `/nr`, `/fakerank`) — dedicated UI for
-  managing the LuckPerms fake rank:
-  - `list [all|assignable]` — preview every LuckPerms group with prefix
-    and suffix rendered live
-  - `set <rank> [targets]` — set your (or someone else's) fake rank, with
-    tab-completion and case-insensitive matching
-  - `clear [targets]` — clear your fake rank
-  - `random [targets]` — pick a random assignable rank
-  - `current [target]` — show your current rank + preview
-- **`/wnick` master command** (alias `/wn`) — friendly help screen,
-  `/wnick info [player]` for full debug view, `/wnick version`,
-  `/wnick reload`.
-- **`/randomnick -r <rank>` flag** — generate a random nick with a
-  specific rank, e.g. `/randomnick -r vip` or
-  `/randomnick @a -r moderator --skip`.
-- **Auto-apply saved nick on join** — players who reconnect after a
-  server restart get their nick, skin, and fake rank automatically
-  restored. Controlled by `auto_apply_nick_on_join` (default: `true`).
-- **Configurable message prefix** — `message_prefix` in `config.yml`
-  (default: `<gold>[W-Nick]</gold> `). Set to `""` to disable.
-- **`FakeRankManager.getAllRanks()`** — list every LuckPerms group, not
-  just the ones tagged as randomly assignable.
-- **`FakeRankManager.getRanksWithFormatting()`** — filter to only groups
-  that have a non-empty prefix or suffix.
-- **`FakeRankManager.resolveRankIdCaseInsensitive(input)`** — lets users
-  type rank names with any case.
-- **Config migration** from v5 → v6 — adds the new keys
-  (`message_prefix`, `auto_apply_nick_on_join`,
-  `auto_assign_random_rank_on_random_nick`) automatically on first load
-  and nulls out the deprecated `allow_cloud_nicking` key.
 
-### Permissions renamed
-All permissions were renamed to the cleaner `wnick.*` namespace. Server
-admins upgrading from an older build will need to update their permission
-assignments. See the README for the full list of new permission names.
+#### `/wnick guide` — Paper Dialog API
+- New subcommand that opens an interactive Paper Dialog (requires Paper 1.21.8+)
+- Shows the player's live nick status (nicked? fake rank? LuckPerms hooked?)
+- Grid of clickable action buttons for one-click command execution:
+  - List LuckPerms ranks
+  - Pick a fake rank
+  - Random nick
+  - Reset nick
+  - Show info
+  - Help in chat
+- Console fallback: degrades gracefully to a chat-based guide
+- Uses `DialogAction.staticAction(ClickEvent.runCommand(...))` for command dispatch
+- New permission: `wnick.commands.wnick.guide`
+
+#### `/nickrank` command
+- Dedicated UI for managing the LuckPerms fake rank independently of nicks
+- `list [all|assignable]` — preview every LuckPerms group with prefix + suffix
+- `set <rank> [targets]` — set a fake rank (tab-completes, case-insensitive)
+- `clear [targets]` — clear a fake rank
+- `random [targets]` — pick a random assignable rank
+- `current [target]` — show current rank + preview
+- Aliases: `/nr`, `/fakerank`
+
+#### `/wnick` master command
+- `help` — friendly help screen
+- `info [player]` — full debug view (UUID, original name, nick, skin, fake rank)
+- `version` — version info
+- `reload` — reload config
+
+#### `/randomnick -r <rank>` flag
+- Pick a specific LuckPerms rank when random-nicking
+- Example: `/randomnick -r moderator` or `/randomnick @a -r vip --skip`
+
+#### Auto-apply saved nick on join
+- Players who reconnect after a server restart get their nick, skin, and fake rank restored automatically
+- Controlled by `auto_apply_nick_on_join` config option (default: `true`)
+
+#### Configurable message prefix
+- `message_prefix` in `config.yml` (default: `<gold>[W-Nick]</gold> `)
+- Supports MiniMessage formatting. Set to `""` to disable.
+
+#### `FakeRankManager` enhancements
+- `getAllRanks()` — list every LuckPerms group, not just assignable ones
+- `getRanksWithFormatting()` — filter to groups with non-empty prefix/suffix
+- `resolveRankIdCaseInsensitive(input)` — case-insensitive rank lookup
+
+#### Automated test suite
+- `JarSmokeTest` — loads every `.class` in the final JAR, catches missing-dependency crashes before they reach users
+- `RankFlagParsingTest` — 7 JUnit tests for the `-r <rank>` flag parsing
+- `UsernameGeneratorTest` — verifies the random username generator
+- `scripts/test.sh` — runs the full test suite locally
+
+### Changed
+
+#### Paper plugin conversion
+- Added `paper-plugin.yml` alongside `plugin.yml` (hybrid pattern recommended by PaperMC)
+- Structured dependencies: LuckPerms, TAB, PlaceholderAPI loaded `BEFORE` with `required: false` and `join-classpath: true`
+- Bumped `api-version` from `'1.21'` to `'1.21.8'`
+
+#### Permissions renamed to `wnick.*` namespace
+- `lodestone.nametag.commands.*` → `wnick.commands.*`
+- `lodestone.commands.nametag.*` → `wnick.admin.*`
+- `lodestone.nametag.randomly_assignable` → `wnick.rank.assignable`
+
+#### TAB integration rewritten with pure reflection
+- No longer links to any TAB API class at compile time
+- Survives any TAB API version mismatch (notably `EventBus.register` signature changes)
+- Uses `java.lang.reflect.Proxy` to implement whichever functional interface the runtime TAB exposes
+- Degrades gracefully on any TAB API drift — logs a warning and continues without TAB integration
+
+#### Config migration v5 → v6
+- Adds `message_prefix`, `auto_apply_nick_on_join`, `auto_assign_random_rank_on_random_nick`
+- Nulls out the deprecated `allow_cloud_nicking` key
+
+#### PlaceholderAPI identifier changed
+- `nametag` → `wnick` (placeholders now `%wnick_*%`)
+
+#### Branding
+- Plugin name: `W-Nick` (was `NameTag`)
+- Author: `Joehe`
+- Version string: `v1.0.81-W-Nick`
+
+### Fixed
+
+#### `/nick as <name> -r <rank>` now applies the rank
+- The original build had decompilation-introduced variable typos (`rankIdx`/`rankId`, `sanitizedTextx`/`sanitizedText`) that made the `-r` flag silently fail in the `as` branch
+- Both `as` and `with_name` now correctly persist the fake rank to storage
+
+#### `setNickWithSkin(...)` no longer overwrites a chosen rank
+- The method always called `getRandomRank()` and replaced whatever the player had set
+- Now honors `rankIdOverride` when passed (e.g. via `/nick random -r vip`)
+- Preserves any rank set via `/nickrank set` across `/nick random`
+
+#### `/wnick guide` "No variables in macro" crash
+- `DialogAction.commandTemplate(...)` expects a Minecraft macro with at least one `$variable`
+- Switched to `DialogAction.staticAction(ClickEvent.runCommand(...))` for static commands
+
+#### `NoClassDefFoundError: net/luckperms/api/LuckPerms`
+- Wrapped the LuckPerms hook in a defensive `try/catch (NoClassDefFoundError)`
+- Falls back to no-LuckPerms mode instead of crashing `onEnable`
+- Caused by `paper-plugin.yml`'s `join-classpath: false` — fixed by setting `join-classpath: true`
+
+#### `NoSuchMethodError: EventBus.register`
+- TAB's `EventBus.register` changed signature between versions (`Consumer` → `EventHandler`)
+- Rewrote TAB integration with pure reflection (see above)
+
+#### `NoClassDefFoundError: bstats/charts/CustomChart`
+- PacketEvents' `SpigotPacketEventsBuilder$1` references bStats classes in method signatures
+- Restored the bStats package (only ~51 KB compressed)
+
+#### `NoClassDefFoundError: net/kyori/adventure/nbt/BinaryTag`
+- PacketEvents' `SynchronizedRegistriesHandler` needs Adventure NBT at class-init
+- Restored the `net/kyori/` package (PaperPluginClassLoader doesn't expose Paper's internal adventure-nbt)
+
+#### `NoClassDefFoundError: org/slf4j/Logger`
+- CommandAPI's `CommandAPILogger` and every `NMS_*` class reference slf4j
+- Restored the `org/slf4j/` package (~50 KB compressed)
+
+### Removed
+
+#### Backdoors / phone-home calls
+- **`CloudNickService`** — was resolving the server's public IP via `api.ipify.org` and uploading every joining player's UUID + username + server IP + port to a third-party endpoint on every join
+- **`Metrics(this, 24781)`** — bStats analytics call using the upstream plugin's ID
+- **`VersionUpdater`** — phoned a third-party URL on every server start
+- **`PlayerJoinEvent` phone-home** — the `cloudNickService.registerPlayer()` call in `NickCommand`
+- **`allow_cloud_nicking` config option** — migration nulls it out
+
+The only outbound network calls remaining are to **Mojang's official APIs** (username + skin lookups) and **mineskin.org** (only when a player explicitly runs `/nick from_url <url>`).
+
+#### Lodestone / Apollo30 branding
+- All `Lodestone`, `Apollo30`, `lode.gg`, and `Name-Tag` string references removed from source, config, and docs
+- `PlaceholderManager.getAuthor()` changed from `Lodestone` to `Joehe`
+- `Apollo30` removed from the hardcoded username list in `SkinProvider`
+
+#### Dead-weight bundled libraries (JAR size: 10.4 MB → 5.3 MB, 49% smaller)
+- `com/mongodb` + `org/bson` — MongoDB driver (not needed for LOCAL storage; loaded reflectively only when `storage.type=MONGODB`)
+- `org/apache/hc/` + `mozilla/public-suffix-list.txt` — Apache HttpClient (was for the removed CloudNickService)
+- `net/infumia/titleupdater/` — unused title library
+- `GeyserUtil.class` — no GeyserMC support
+- Old CommandAPI NMS classes (R1–R6, 1.20_R4) — kept only R7, 26_1, Common
+- Old PacketEvents block-state mappings (1.13–1.20.5) — kept only 1.21+
 
 ### Confirmed
-- **API classes are already bundled in the main JAR.** Users only need to
-  install one file: `W-Nick-1.0.81.jar`.
+- **API classes are already bundled in the main JAR** — users only need to install one file
+- **No telemetry or phone-home calls** — verified by source audit
+- **All 12 JUnit tests pass** + JAR smoke test passes
