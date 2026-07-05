@@ -198,6 +198,21 @@ MIT — see [LICENSE](LICENSE).
 
 ---
 
+## Documentation
+
+📖 **[Wiki](https://github.com/Sxnpaiwin/W-nicks/wiki)** — full documentation:
+
+- [Commands](https://github.com/Sxnpaiwin/W-nicks/wiki/Commands) — full command reference
+- [Permissions](https://github.com/Sxnpaiwin/W-nicks/wiki/Permissions) — complete permission list
+- [Configuration](https://github.com/Sxnpaiwin/W-nicks/wiki/Configuration) — `config.yml` docs
+- [LuckPerms Integration](https://github.com/Sxnpaiwin/W-nicks/wiki/LuckPerms-Integration) — how rank spoofing works
+- [Paper Dialog API](https://github.com/Sxnpaiwin/W-nicks/wiki/Paper-Dialog-API) — how `/wnick guide` works
+- [Privacy](https://github.com/Sxnpaiwin/W-nicks/wiki/Privacy) — what backdoors were removed
+- [Building from Source](https://github.com/Sxnpaiwin/W-nicks/wiki/Building-from-Source) — build & test instructions
+- [Troubleshooting](https://github.com/Sxnpaiwin/W-nicks/wiki/Troubleshooting) — common issues and fixes
+
+---
+
 ## Credits
 
 W-Nick is authored and maintained by **Joehe**.
