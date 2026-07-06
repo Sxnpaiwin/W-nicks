@@ -65,9 +65,10 @@ public final class TabIntegration {
    private Method    tlfSetSuffixMethod;
    private Method    ntSetPrefixMethod;
    private Method    ntSetSuffixMethod;
-   // TabPlayer.getName / getUniqueId
+   // TabPlayer.getName / getUniqueId / setTemporaryGroup
    private Method    tabPlayerGetNameMethod;
    private Method    tabPlayerGetUniqueIdMethod;
+   private Method    tabPlayerSetTemporaryGroupMethod;
 
    private boolean   initialized = false;
    private boolean   hookSucceeded = false;
@@ -137,6 +138,15 @@ public final class TabIntegration {
          Class<?> tabPlayerClass = Class.forName("me.neznamy.tab.api.TabPlayer");
          tabPlayerGetNameMethod    = tabPlayerClass.getMethod("getName");
          tabPlayerGetUniqueIdMethod = tabPlayerClass.getMethod("getUniqueId");
+         // setTemporaryGroup(String) — tells TAB to sort the player as if they
+         // were in the given group. This is what makes the fake rank respect
+         // TAB's sorting configuration.
+         try {
+            tabPlayerSetTemporaryGroupMethod = tabPlayerClass.getMethod("setTemporaryGroup", String.class);
+         } catch (NoSuchMethodException ex) {
+            tabPlayerSetTemporaryGroupMethod = null;
+            logger.warning("[TAB] TabPlayer.setTemporaryGroup not found; fake rank will not affect TAB sorting.");
+         }
 
          hookSucceeded = true;
          return true;
@@ -298,7 +308,31 @@ public final class TabIntegration {
             ntSetSuffixMethod.invoke(ntm, tabPlayer, fakeSuffix);
          }
 
-         logger.info("[TAB] Updated " + originalName + " to " + name);
+         // Set the temporary group so TAB sorts the player as if they were
+         // in the fake rank's group. This makes the fake rank respect TAB's
+         // sorting configuration (sorting.yml). When not nicked or no fake
+         // rank is set, clear the temporary group so the player reverts to
+         // their real LuckPerms group for sorting.
+         if (tabPlayerSetTemporaryGroupMethod != null) {
+            String groupIdToSet = null;
+            if (nicked && plugin.getFakeRankManager() != null) {
+               wnick.NickPlayer nickData = plugin.getPlayerCache().get(uuid);
+               if (nickData != null && nickData.getFakeRankId() != null) {
+                  // Use the fake rank id as the temporary group name
+                  groupIdToSet = nickData.getFakeRankId();
+               }
+            }
+            tabPlayerSetTemporaryGroupMethod.invoke(tabPlayer, groupIdToSet);
+         }
+
+         logger.info("[TAB] Updated " + originalName + " to " + name
+            + (fakePrefix != null ? " (prefix: " + fakePrefix + ")" : "")
+            + (nicked && plugin.getFakeRankManager() != null
+               ? (plugin.getPlayerCache().get(uuid) != null
+                  && plugin.getPlayerCache().get(uuid).getFakeRankId() != null
+                  ? " (group: " + plugin.getPlayerCache().get(uuid).getFakeRankId() + ")"
+                  : "")
+               : ""));
       } catch (Throwable t) {
          logger.warning("[TAB] Failed to update TAB player: " + t.getClass().getSimpleName() + ": " + t.getMessage());
       }
