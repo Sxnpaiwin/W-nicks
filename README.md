@@ -12,7 +12,7 @@
   <a href="https://github.com/Sxnpaiwin/W-nicks/commits/main"><img src="https://img.shields.io/github/last-commit/Sxnpaiwin/W-nicks?style=flat-square&logo=github&color=56D9A3&logoColor=fff" alt="Last commit"/></a>
   <a href="https://papermc.io"><img src="https://img.shields.io/badge/Paper-1.21.8%2B-1a1a2e?style=flat-square&logo=paper&logoColor=fff" alt="Paper"/></a>
   <a href="https://github.com/Sxnpaiwin/W-nicks/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-56D9A3?style=flat-square&logo=opensourceinitiative&logoColor=fff" alt="License MIT"/></a>
-  <a href="https://github.com/Sxnpaiwin/W-nicks/releases"><img src="https://img.shields.io/badge/JAR-5.2_MB-blue?style=flat-square&logo=apachespark&logoColor=fff" alt="JAR size"/></a>
+  <a href="https://github.com/Sxnpaiwin/W-nicks/releases"><img src="https://img.shields.io/badge/JAR-5.4_MB-blue?style=flat-square&logo=apachespark&logoColor=fff" alt="JAR size"/></a>
   <br/><br/>
   <img src="assets/banner.svg" alt="W-Nick banner" width="100%"/>
 </p>
