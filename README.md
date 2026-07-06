@@ -1,88 +1,150 @@
-# W-Nick
+<h1 align="center">W-Nick</h1>
 
-> A lightweight, privacy-respecting nick plugin for Paper 1.21.8+ with LuckPerms rank spoofing and Paper Dialog API integration.
-
-[![GitHub release](https://img.shields.io/github/v/release/Sxnpaiwin/W-nicks?style=flat-square)](https://github.com/Sxnpaiwin/W-nicks/releases)
-[![JAR size](https://img.shields.io/badge/JAR-5.3_MB-blue?style=flat-square)](https://github.com/Sxnpaiwin/W-nicks/releases)
-[![License](https://img.shields.io/badge/license-MIT-green?style=flat-square)](LICENSE)
-[![Paper](https://img.shields.io/badge/Paper-1.21.8%2B-blue?style=flat-square)](https://papermc.io)
-
-**Author:** Joehe · **Repo:** [github.com/Sxnpaiwin/W-nicks](https://github.com/Sxnpaiwin/W-nicks)
-
----
-
-## Overview
-
-W-Nick lets players nick themselves with a fake name, fake skin, AND a fake LuckPerms rank (prefix + suffix). Players can look like a VIP, Moderator, or any other rank while nicked — perfect for streamers, events, or just hiding from the crowd.
-
-**One JAR, no separate API plugin needed.** The API classes are already bundled inside — just drop `W-Nick-1.0.81.jar` into `plugins/` and restart.
-
----
-
-## Features
-
-### Nicking
-| Command | Description |
-|---------|-------------|
-| `/nick reset` | Clear your nick |
-| `/nick as <player>` | Nick as an existing Minecraft player (skin + name) |
-| `/nick with_name <name>` | Set a custom nickname |
-| `/nick with_skin <player>` | Copy another player's skin |
-| `/nick from_url <url>` | Apply a Mineskin skin |
-| `/randomnick [selector] [-r <rank>] [--skip]` | Generate a random nick |
-
-### LuckPerms Rank Spoofing
-| Command | Description |
-|---------|-------------|
-| `/nickrank list [all\|assignable]` | Preview every LuckPerms group with prefix + suffix rendered live |
-| `/nickrank set <rank> [targets]` | Set your fake rank (tab-completes, case-insensitive) |
-| `/nickrank clear [targets]` | Clear your fake rank |
-| `/nickrank random [targets]` | Pick a random assignable rank |
-| `/nickrank current [target]` | Show your current rank + preview |
-
-You can also pass `-r <rank>` directly to `/nick` and `/randomnick`:
-```
-/nick with_name Steve -r vip
-/randomnick -r moderator
-```
-
-### W-Nick Extras
-- **`/wnick guide`** — interactive Paper Dialog with clickable action buttons
-- **`/wnick info [player]`** — full debug view (UUID, nick, skin, fake rank, preview)
-- **`/wnick version` / `/wnick reload`** — version info and config reload
-- **Auto-apply saved nick on join** — players who reconnect get their nick back automatically
-- **Configurable message prefix** — `message_prefix` in `config.yml`
-
-### Integrations
-- **LuckPerms** (required for rank spoofing) — hook into any LuckPerms group
-- **TAB** (optional) — pushes spoofed prefix/suffix to TAB's tab-list and nametag managers
-- **PlaceholderAPI** (optional) — exposes `%wnick_nickname%`, `%wnick_fake_rank%`, etc.
-- **Paper Dialog API** (1.21.8+) — `/wnick guide` opens an in-game dialog
-- **Folia** — supported
+<p align="center">
+  <i>A lightweight, privacy-respecting nick plugin for Paper 1.21.8+ with LuckPerms rank spoofing and Paper Dialog API integration.</i>
+  <br/><br/>
+  <img width="120" alt="W-Nick logo" src="assets/logo.svg"/>
+  <br/><br/>
+  <b><a href="https://github.com/Sxnpaiwin/W-nicks/releases">Download</a></b> | <b><a href="https://github.com/Sxnpaiwin/W-nicks/wiki">Documentation</a></b> | <b><a href="https://github.com/Sxnpaiwin/W-nicks/issues">Issues</a></b>
+  <br/><br/>
+  <a href="https://github.com/Sxnpaiwin/W-nicks/releases"><img src="https://img.shields.io/github/v/release/Sxnpaiwin/W-nicks?style=flat-square&logo=github&color=FFC857&logoColor=fff" alt="Release"/></a>
+  <a href="https://github.com/Sxnpaiwin/W-nicks/releases"><img src="https://img.shields.io/github/downloads/Sxnpaiwin/W-nicks/latest/total?style=flat-square&logo=github&color=FFC857&logoColor=fff" alt="Downloads"/></a>
+  <a href="https://github.com/Sxnpaiwin/W-nicks/commits/main"><img src="https://img.shields.io/github/last-commit/Sxnpaiwin/W-nicks?style=flat-square&logo=github&color=56D9A3&logoColor=fff" alt="Last commit"/></a>
+  <a href="https://papermc.io"><img src="https://img.shields.io/badge/Paper-1.21.8%2B-1a1a2e?style=flat-square&logo=paper&logoColor=fff" alt="Paper"/></a>
+  <a href="https://github.com/Sxnpaiwin/W-nicks/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-56D9A3?style=flat-square&logo=opensourceinitiative&logoColor=fff" alt="License MIT"/></a>
+  <a href="https://github.com/Sxnpaiwin/W-nicks/releases"><img src="https://img.shields.io/badge/JAR-5.2_MB-blue?style=flat-square&logo=apachespark&logoColor=fff" alt="JAR size"/></a>
+  <br/><br/>
+  <img src="assets/banner.svg" alt="W-Nick banner" width="100%"/>
+</p>
 
 ---
 
-## Quick Start
+<details>
+  <summary><b>📖 Table of Contents</b></summary>
 
-1. **Install [Paper 1.21.8+](https://papermc.io)** (required for the Dialog API)
-2. **Install [LuckPerms](https://luckperms.net/)** (required for rank spoofing)
+- [✨ Features](#-features)
+- [🚀 Quick Start](#-quick-start)
+- [📋 Commands](#-commands)
+- [🔐 Permissions](#-permissions)
+- [⚙️ Configuration](#️-configuration)
+- [💾 Storage](#-storage)
+- [🔒 Privacy](#-privacy)
+- [🧪 Testing](#-testing)
+- [📦 Building from Source](#-building-from-source)
+- [📖 Documentation](#-documentation)
+- [🙏 Credits](#-credits)
+
+</details>
+
+---
+
+## ✨ Features
+
+### 🎭 Nicking
+- **`/nick as <name>`** — Nick as another player (copies skin + name)
+- **`/nick with_name <name>`** — Set a custom nickname
+- **`/nick with_skin <player>`** — Copy another player's skin
+- **`/nick from_url <url>`** — Apply a Mineskin skin
+- **`/nick reset`** — Restore your original name and skin
+- **`/randomnick`** — Generate a random nick with a random rank
+
+### 🏷️ LuckPerms Rank Spoofing
+- **`/nickrank list`** — Preview every LuckPerms group with prefix + suffix
+- **`/nickrank set <rank>`** — Set your fake rank (tab-completes, case-insensitive)
+- **`/nickrank random`** — Pick a random assignable rank
+- **`/nickrank current`** — Show your current rank + preview
+- Pass **`-r <rank>`** to any nick command to set the rank inline
+- **TAB sorting support** — spoofed rank respects TAB's sorting configuration
+
+### 🪟 Paper Dialog API
+- **`/wnick guide`** — Interactive in-game dialog with clickable action buttons
+- Shows live nick status and one-click shortcuts for every command
+- Requires Paper 1.21.8+
+
+### 🔄 Quality of Life
+- **Auto-apply on join** — reconnecting players get their nick back automatically
+- **Configurable message prefix** — MiniMessage formatting supported
+- **PlaceholderAPI integration** — `%wnick_nickname%`, `%wnick_fake_rank%`, etc.
+- **Folia support**
+
+---
+
+## 🚀 Quick Start
+
+1. **Install [Paper 1.21.8+](https://papermc.io)** — required for the Dialog API
+2. **Install [LuckPerms](https://luckperms.net/)** — required for rank spoofing
 3. *(Optional)* Install [TAB](https://github.com/NEZNAMY/TAB) and [PlaceholderAPI](https://github.com/HelpChat/PlaceholderAPI)
-4. **Download** `W-Nick-1.0.81.jar` from the [releases page](../../releases) and drop it into `plugins/`
-5. **Restart** your server
+4. **Download** `W-Nick-1.0.81.jar` from the [releases page](https://github.com/Sxnpaiwin/W-nicks/releases)
+5. **Drop it** into `plugins/` and **restart** your server
 6. **Tag a group as randomly assignable:**
-   ```
+   ```bash
    /lp group vip permission set wnick.rank.assignable true
    ```
-7. **In-game:** Run `/wnick guide` to open the interactive dialog, or:
-   ```
-   /nickrank list        → see available ranks
-   /nickrank set vip     → pick a rank
-   /nick random          → apply a random nick
+7. **In-game**, run `/wnick guide` to open the interactive dialog, or:
+   ```bash
+   /nickrank list        # see available ranks
+   /nickrank set vip     # pick a rank
+   /nick as Smazzy       # nick yourself with that rank
    ```
 
 ---
 
-## Permissions
+## 📋 Commands
+
+### `/nick` — Set, reset, or change your nickname
+
+| Command | Description |
+|---------|-------------|
+| `/nick` | Show help |
+| `/nick as <name> [-r <rank>]` | Nick as another player (copies skin + name) |
+| `/nick with_name <name> [-r <rank>]` | Set a custom name (keeps your skin) |
+| `/nick with_skin <player>` | Copy another player's skin |
+| `/nick from_url <url\|id>` | Apply a Mineskin skin |
+| `/nick reset` | Restore your original name and skin |
+| `/nick <player> <action> [name]` | Act on another player |
+
+### `/randomnick` — Generate a random nickname
+
+| Command | Description |
+|---------|-------------|
+| `/randomnick` | Random nick for yourself |
+| `/randomnick -r <rank>` | Random nick with a specific rank |
+| `/randomnick @a -r vip --skip` | Random nick for all players, skipping already-nicked |
+
+### `/nickrank` — Manage your fake rank
+
+**Aliases:** `/nr`, `/fakerank`
+
+| Command | Description |
+|---------|-------------|
+| `/nickrank list [all\|assignable]` | List LuckPerms groups with prefix/suffix preview |
+| `/nickrank set <rank> [targets]` | Set your fake rank |
+| `/nickrank clear [targets]` | Clear your fake rank |
+| `/nickrank random [targets]` | Pick a random assignable rank |
+| `/nickrank current [target]` | Show current rank + preview |
+
+### `/wnick` — Master command
+
+**Alias:** `/wn`
+
+| Command | Description |
+|---------|-------------|
+| `/wnick` | Show help |
+| `/wnick guide` | Open the interactive Paper Dialog (1.21.8+) |
+| `/wnick info [player]` | Full debug view |
+| `/wnick version` | Show installed version |
+| `/wnick reload` | Reload config |
+
+### `/realname <nick>` — Look up who's behind a nick
+
+---
+
+## 🔐 Permissions
+
+All permissions use the `wnick.*` namespace.
+
+<details>
+<summary><b>View all permissions</b></summary>
 
 | Permission | Default | Description |
 |------------|---------|-------------|
@@ -97,23 +159,25 @@ You can also pass `-r <rank>` directly to `/nick` and `/randomnick`:
 | `wnick.commands.realname` | true | Access to `/realname` |
 | `wnick.commands.nickrank` | op | Access to `/nickrank` |
 | `wnick.commands.nickrank.list` | op | List ranks |
-| `wnick.commands.nickrank.set` | op | Set a fake rank on yourself |
-| `wnick.commands.nickrank.clear` | op | Clear your fake rank |
-| `wnick.commands.nickrank.random` | op | Pick a random assignable rank |
-| `wnick.commands.nickrank.current` | op | View your current fake rank |
-| `wnick.commands.nickrank.others` | op | Act on other players' fake rank |
+| `wnick.commands.nickrank.set` | op | Set a fake rank |
+| `wnick.commands.nickrank.clear` | op | Clear fake rank |
+| `wnick.commands.nickrank.random` | op | Pick a random rank |
+| `wnick.commands.nickrank.current` | op | View current rank |
+| `wnick.commands.nickrank.others` | op | Act on other players' rank |
 | `wnick.commands.wnick` | op | Access to `/wnick` |
 | `wnick.commands.wnick.guide` | op | Open the Paper Dialog guide |
-| `wnick.commands.wnick.info` | op | View your own nick info |
-| `wnick.commands.wnick.info.others` | op | View other players' nick info |
-| `wnick.admin.reload` | op | `/wnick reload` and `/nametag reload` |
+| `wnick.commands.wnick.info` | op | View your own info |
+| `wnick.commands.wnick.info.others` | op | View other players' info |
+| `wnick.admin.reload` | op | `/wnick reload` |
 | `wnick.admin.refresh_player` | op | `/nametag refresh_player` |
 | `wnick.admin.debug` | op | `/nametag debug` |
 | `wnick.rank.assignable` | false | Tags a LuckPerms group as randomly assignable |
 
+</details>
+
 ---
 
-## Configuration
+## ⚙️ Configuration
 
 `plugins/W-Nick/config.yml`:
 
@@ -142,77 +206,82 @@ storage:
     pool-size: 10
 ```
 
+See the [Configuration wiki page](https://github.com/Sxnpaiwin/W-nicks/wiki/Configuration) for the full option reference.
+
 ---
 
-## Storage
+## 💾 Storage
 
 **LOCAL** (default) — saves nick data to a YAML file in `plugins/W-Nick/data.yml`. No extra setup needed.
 
-**MONGODB** — saves nick data to a MongoDB database. The MongoDB driver is **not bundled** in the lightweight JAR (~5 MB). To use MongoDB storage:
+**MONGODB** — saves nick data to a MongoDB database. The MongoDB driver is **not bundled** in the lightweight JAR. To use MongoDB storage:
 1. Install the [MongoDB driver](https://mongodb.github.io/mongo-java-driver/) as a server library, OR
-2. Change `storage.type` back to `LOCAL` (the plugin falls back to LOCAL automatically if the driver is missing)
+2. Keep `storage.type: "LOCAL"` (the plugin falls back to LOCAL automatically if the driver is missing)
 
 ---
 
-## Privacy
+## 🔒 Privacy
 
 W-Nick ships **no telemetry and no phone-home calls**:
-- No bStats / metrics
-- No version-checker that hits third-party servers
-- No "cloud nick" service that uploads your server IP or player UUIDs
 
-The only outbound network calls are to **Mojang's official APIs** (username + skin lookups) and **mineskin.org** (only when a player explicitly runs `/nick from_url <url>`).
+- ❌ No bStats / metrics
+- ❌ No version-checker that hits third-party servers
+- ❌ No "cloud nick" service that uploads your server IP or player UUIDs
+- ✅ Only outbound calls: Mojang's official APIs + mineskin.org (player-initiated only)
 
----
-
-## Building from Source
-
-This repository ships the patched Java sources under `src/`. The bundled dependencies (PacketEvents, CommandAPI, BookshelfAPI, etc.) are not open source and are not included — to build, you need the original upstream JAR which serves as the base for repackaging.
-
-```bash
-# Requires JDK 21 + the original Name-Tag-Paper-1.0.81.jar
-./scripts/test.sh       # run the test suite
-./scripts/package.sh    # build dist/W-Nick-1.0.81.jar
-```
+See the [Privacy wiki page](https://github.com/Sxnpaiwin/W-nicks/wiki/Privacy) for the full audit.
 
 ---
 
-## Testing
+## 🧪 Testing
 
 W-Nick includes an automated test suite to catch runtime crashes before they reach users:
 
-- **`JarSmokeTest`** — loads every `.class` in the final JAR and verifies all dependencies resolve. Catches "I stripped a package that was actually needed" bugs.
-- **`RankFlagParsingTest`** — 7 JUnit tests for the `-r <rank>` flag parsing.
-- **`UsernameGeneratorTest`** — verifies the random username generator produces valid Minecraft usernames.
+| Test | Description |
+|------|-------------|
+| `JarSmokeTest` | Loads every `.class` in the final JAR, catches missing-dependency crashes |
+| `RankFlagParsingTest` | 7 JUnit tests for the `-r <rank>` flag parsing |
+| `UsernameGeneratorTest` | Verifies the random username generator |
 
-Run locally:
 ```bash
-./scripts/test.sh
+./scripts/test.sh    # run the full test suite
 ```
 
 ---
 
-## License
+## 📦 Building from Source
 
-MIT — see [LICENSE](LICENSE).
+```bash
+git clone https://github.com/Sxnpaiwin/W-nicks.git
+cd W-nicks
+mkdir -p upload && cp /path/to/Name-Tag-Paper-1.0.81.jar upload/
+./scripts/package.sh    # produces dist/W-Nick-1.0.81.jar
+```
 
----
-
-## Documentation
-
-📖 **[Wiki](https://github.com/Sxnpaiwin/W-nicks/wiki)** — full documentation:
-
-- [Commands](https://github.com/Sxnpaiwin/W-nicks/wiki/Commands) — full command reference
-- [Permissions](https://github.com/Sxnpaiwin/W-nicks/wiki/Permissions) — complete permission list
-- [Configuration](https://github.com/Sxnpaiwin/W-nicks/wiki/Configuration) — `config.yml` docs
-- [LuckPerms Integration](https://github.com/Sxnpaiwin/W-nicks/wiki/LuckPerms-Integration) — how rank spoofing works
-- [Paper Dialog API](https://github.com/Sxnpaiwin/W-nicks/wiki/Paper-Dialog-API) — how `/wnick guide` works
-- [Privacy](https://github.com/Sxnpaiwin/W-nicks/wiki/Privacy) — what backdoors were removed
-- [Building from Source](https://github.com/Sxnpaiwin/W-nicks/wiki/Building-from-Source) — build & test instructions
-- [Troubleshooting](https://github.com/Sxnpaiwin/W-nicks/wiki/Troubleshooting) — common issues and fixes
+Requires JDK 21 + the original upstream JAR (serves as the base for repackaging). See the [Building from Source wiki page](https://github.com/Sxnpaiwin/W-nicks/wiki/Building-from-Source) for details.
 
 ---
 
-## Credits
+## 📖 Documentation
 
-W-Nick is authored and maintained by **Joehe**.
+Full documentation is available on the **[GitHub Wiki](https://github.com/Sxnpaiwin/W-nicks/wiki)**:
+
+- 📋 [Commands](https://github.com/Sxnpaiwin/W-nicks/wiki/Commands) — full command reference
+- 🔐 [Permissions](https://github.com/Sxnpaiwin/W-nicks/wiki/Permissions) — complete permission list
+- ⚙️ [Configuration](https://github.com/Sxnpaiwin/W-nicks/wiki/Configuration) — `config.yml` docs
+- 🏷️ [LuckPerms Integration](https://github.com/Sxnpaiwin/W-nicks/wiki/LuckPerms-Integration) — how rank spoofing works
+- 🪟 [Paper Dialog API](https://github.com/Sxnpaiwin/W-nicks/wiki/Paper-Dialog-API) — how `/wnick guide` works
+- 🔒 [Privacy](https://github.com/Sxnpaiwin/W-nicks/wiki/Privacy) — what backdoors were removed
+- 🔧 [Troubleshooting](https://github.com/Sxnpaiwin/W-nicks/wiki/Troubleshooting) — common issues and fixes
+
+---
+
+## 🙏 Credits
+
+**Author:** [Joehe](https://github.com/Sxnpaiwin) · **License:** [MIT](LICENSE)
+
+W-Nick is a fork of [Name-Tag](https://lode.gg/plugin/nametag) by Apollo30, with backdoors removed, the API merged in, and new features added (Paper Dialog integration, `/nickrank`, `/wnick guide`, auto-apply on join, TAB sorting support, and more).
+
+<p align="center">
+  <sub>Built with ❤️ for the Paper community</sub>
+</p>
